@@ -5,6 +5,7 @@ import { Navbar } from '../components/layout/Navbar';
 import { CountdownTimer } from '../components/overview/CountdownTimer';
 import { HealthScoreGauge } from '../components/overview/HealthScoreGauge';
 import { GuestSensitivityCard } from '../components/overview/GuestSensitivityCard';
+import { HowToUseModal } from '../components/common/HowToUseModal';
 
 describe('UI Components', () => {
   it('renders Navbar with event type switcher and health badge', () => {
@@ -27,6 +28,7 @@ describe('UI Components', () => {
         hasApiKey={false}
         onOpenApiKeyModal={vi.fn()}
         onOpenShareModal={vi.fn()}
+        onOpenHelpModal={vi.fn()}
         onToggleAIChat={vi.fn()}
         isAIChatOpen={false}
       />
@@ -36,6 +38,7 @@ describe('UI Components', () => {
     expect(screen.getByText('Wedding')).toBeInTheDocument();
     expect(screen.getByText('Birthday')).toBeInTheDocument();
     expect(screen.getByText('Community')).toBeInTheDocument();
+    expect(screen.getByText('How to Use')).toBeInTheDocument();
   });
 
   it('renders CountdownTimer with location details', () => {
@@ -93,5 +96,19 @@ describe('UI Components', () => {
 
     expect(screen.getByText('120')).toBeInTheDocument();
     expect(screen.getByText('What If +20 Guests?')).toBeInTheDocument();
+  });
+
+  it('renders HowToUseModal with step-by-step instructions', () => {
+    render(
+      <HowToUseModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onNavigateToTab={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('How to Use Soirée')).toBeInTheDocument();
+    expect(screen.getByText('Step-by-Step Guide')).toBeInTheDocument();
+    expect(screen.getByText('Pick Your Event Type Persona')).toBeInTheDocument();
   });
 });

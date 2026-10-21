@@ -15,6 +15,7 @@ import { AIStudioTab } from './components/ai/AIStudioTab';
 import { AICoPilotDrawer } from './components/ai/AICoPilotDrawer';
 import { ApiKeyModal } from './components/common/ApiKeyModal';
 import { ShareModal } from './components/common/ShareModal';
+import { HowToUseModal } from './components/common/HowToUseModal';
 
 export const App: React.FC = () => {
   // Check for shared URL plan or initialize wedding
@@ -34,6 +35,7 @@ export const App: React.FC = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isHowToUseModalOpen, setIsHowToUseModalOpen] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(() => Boolean(getStoredApiKey()));
 
   // Auto-save whenever plan changes
@@ -214,6 +216,7 @@ export const App: React.FC = () => {
         hasApiKey={hasApiKey}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
         onOpenShareModal={() => setIsShareModalOpen(true)}
+        onOpenHelpModal={() => setIsHowToUseModalOpen(true)}
         onToggleAIChat={() => setIsAIChatOpen(prev => !prev)}
         isAIChatOpen={isAIChatOpen}
       />
@@ -334,6 +337,12 @@ export const App: React.FC = () => {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         plan={plan}
+      />
+
+      <HowToUseModal
+        isOpen={isHowToUseModalOpen}
+        onClose={() => setIsHowToUseModalOpen(false)}
+        onNavigateToTab={(tab) => setActiveTab(tab)}
       />
 
       {/* Footer */}

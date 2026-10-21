@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Share2, Key, Bot } from 'lucide-react';
+import { Sparkles, Share2, Key, Bot, HelpCircle } from 'lucide-react';
 import { EventType, PlanHealthMetrics } from '../../types';
 import { EVENT_TYPE_METADATA } from '../../constants/presets';
 
@@ -10,6 +10,7 @@ interface NavbarProps {
   hasApiKey: boolean;
   onOpenApiKeyModal: () => void;
   onOpenShareModal: () => void;
+  onOpenHelpModal: () => void;
   onToggleAIChat: () => void;
   isAIChatOpen: boolean;
 }
@@ -21,6 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   hasApiKey,
   onOpenApiKeyModal,
   onOpenShareModal,
+  onOpenHelpModal,
   onToggleAIChat,
   isAIChatOpen
 }) => {
@@ -137,6 +139,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Share2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Share</span>
+            </button>
+
+            {/* Question Mark: Step-by-Step How To Use Button */}
+            <button
+              onClick={onOpenHelpModal}
+              title="Step-by-Step Guide: How to use Soirée"
+              aria-label="How to use Soirée Step-by-Step Guide"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/80 rounded-xl transition shadow-xs group"
+            >
+              <HelpCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform" />
+              <span className="hidden sm:inline">How to Use</span>
             </button>
 
             {/* AI Co-Pilot Toggle */}
