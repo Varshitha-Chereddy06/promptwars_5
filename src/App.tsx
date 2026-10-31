@@ -206,7 +206,7 @@ export const App: React.FC = () => {
   const pendingRsvpCount = plan.guests.filter(g => g.rsvpStatus === 'pending').length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50/70 dark:bg-stone-950 text-stone-900 dark:text-stone-100 font-sans transition-colors">
+    <div className="planner-app min-h-screen flex flex-col bg-stone-50/70 dark:bg-stone-950 text-stone-900 dark:text-stone-100 font-sans transition-colors">
       
       {/* Top Navigation */}
       <Navbar
@@ -231,7 +231,7 @@ export const App: React.FC = () => {
       />
 
       {/* Body Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="planner-main flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {activeTab === 'overview' && (
           <OverviewTab
             plan={plan}
@@ -346,7 +346,7 @@ export const App: React.FC = () => {
       />
 
       {/* Footer */}
-      <footer className="border-t border-stone-200/80 dark:border-stone-800 bg-white/50 dark:bg-stone-900/50 py-6 mt-12 text-xs text-stone-500">
+      <footer className="planner-footer border-t border-stone-200/80 dark:border-stone-800 bg-white/50 dark:bg-stone-900/50 py-6 mt-12 text-xs text-stone-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-serif font-bold text-stone-800 dark:text-stone-200">Soirée</span>

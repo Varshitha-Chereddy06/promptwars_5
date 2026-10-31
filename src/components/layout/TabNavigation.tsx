@@ -30,7 +30,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
   ];
 
   return (
-    <nav className="border-b border-stone-200/80 dark:border-stone-800 bg-white/70 dark:bg-stone-900/70 backdrop-blur-sm sticky top-16 z-30 overflow-x-auto scrollbar-none" aria-label="Planning sections">
+    <nav className="planner-nav border-b border-stone-200/80 dark:border-stone-800 bg-white/70 dark:bg-stone-900/70 backdrop-blur-sm sticky top-16 z-30 overflow-x-auto scrollbar-none" aria-label="Planning sections">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex space-x-1 sm:space-x-2 py-2.5 min-w-max">
           {tabs.map((tab) => {
@@ -43,7 +43,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => onSelectTab(tab.id)}
-                className={`group relative flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-medium rounded-xl transition-all ${
+                className={`planner-nav-tab group relative flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-medium rounded-xl transition-all ${
                   isActive
                     ? 'bg-stone-900 dark:bg-white text-white dark:text-stone-900 shadow-sm font-semibold'
                     : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800'

@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Key, ShieldCheck, ExternalLink, X, CheckCircle2, Sparkles, AlertCircle } from 'lucide-react';
-import { getStoredApiKey, setStoredApiKey } from '../../services/storageService';
+import { Key, ShieldCheck, ExternalLink, X, CheckCircle2, Sparkles } from 'lucide-react';
+import {
+  AIProvider,
+  getAIProviderSettings,
+  getStoredApiKey,
+  setAIProviderSettings,
+  setStoredApiKey
+} from '../../services/storageService';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
@@ -10,11 +16,18 @@ interface ApiKeyModalProps {
 
 export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKeyUpdated }) => {
   const [apiKey, setApiKey] = useState('');
+  const [provider, setProvider] = useState<AIProvider>('gemini');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [model, setModel] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setApiKey(getStoredApiKey());
+      const settings = getAIProviderSettings();
+      setProvider(settings.provider);
+      setBaseUrl(settings.baseUrl);
+      setModel(settings.model);
       setSavedSuccess(false);
     }
   }, [isOpen]);
@@ -23,6 +36,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
 
   const handleSave = () => {
     setStoredApiKey(apiKey);
+    setAIProviderSettings({ provider, baseUrl, model });
     setSavedSuccess(true);
     onKeyUpdated();
     setTimeout(() => {
@@ -48,9 +62,9 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
             </div>
             <div>
               <h2 id="api-modal-title" className="text-base font-semibold text-stone-900 dark:text-stone-100">
-                AI Engine & Gemini API Key
+                AI Engine Settings
               </h2>
-              <p className="text-xs text-stone-500">Configure live LLM or offline local reasoning</p>
+              <p className="text-xs text-stone-500">Choose live AI or offline local reasoning</p>
             </div>
           </div>
           <button
@@ -69,35 +83,82 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
             <div>
               <p className="font-semibold">Dual-Mode AI Guarantee</p>
               <p className="mt-0.5 text-emerald-700 dark:text-emerald-400">
-                Soirée runs with full functionality even <strong>without</strong> an API key using our built-in local contextual intelligence engine. Adding a Google Gemini API key enables unbounded, live LLM generation.
+                Soirée runs without an API key using its built-in offline response engine. A key enables live generation from the selected provider.
               </p>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="gemini-key-input" className="block text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400">
-              Google Gemini API Key (Optional)
+            <label htmlFor="ai-provider" className="block text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400">
+              Live AI provider
+            </label>
+            <select
+              id="ai-provider"
+              value={provider}
+              onChange={(e) => setProvider(e.target.value as AIProvider)}
+              className="w-full px-3.5 py-2.5 text-sm bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100"
+            >
+              <option value="gemini">Google Gemini</option>
+              <option value="openai-compatible">OpenAI-compatible API router</option>
+            </select>
+
+            {provider === 'openai-compatible' && (
+              <div className="space-y-3 pt-1">
+                <div>
+                  <label htmlFor="ai-base-url" className="block text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1.5">
+                    API base URL
+                  </label>
+                  <input
+                    id="ai-base-url"
+                    type="url"
+                    value={baseUrl}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                    placeholder="https://router.example/v1"
+                    className="w-full px-3.5 py-2.5 text-sm bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 font-mono"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="ai-model" className="block text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-1.5">
+                    Model name
+                  </label>
+                  <input
+                    id="ai-model"
+                    type="text"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    placeholder="Enter a model enabled for your router"
+                    className="w-full px-3.5 py-2.5 text-sm bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 font-mono"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            <label htmlFor="ai-key-input" className="block text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400">
+              {provider === 'gemini' ? 'Gemini API key' : 'Router API key'}
             </label>
             <div className="relative">
               <input
-                id="gemini-key-input"
+                id="ai-key-input"
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="AIzaSy..."
+                placeholder="Paste your API key"
                 className="w-full px-3.5 py-2.5 text-sm bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-rose-500 transition font-mono"
               />
             </div>
             <p className="text-[11px] text-stone-500 flex items-center justify-between mt-1">
-              <span>Your key is stored securely in your browser's local memory only.</span>
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noreferrer"
-                className="text-rose-600 hover:text-rose-700 inline-flex items-center gap-1 font-medium underline"
-              >
-                Get free Gemini Key <ExternalLink className="w-3 h-3" />
-              </a>
+              <span>Stored in this browser only. Do not use a browser-stored key on a public deployment.</span>
+              {provider === 'gemini' && (
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-rose-600 hover:text-rose-700 inline-flex items-center gap-1 font-medium underline"
+                >
+                  Get free Gemini Key <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </p>
           </div>
 
@@ -111,7 +172,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
           <div className="pt-2 flex items-center justify-between text-xs text-stone-500">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Zero server logging • 100% Client-Side Privacy</span>
+              <span>API requests send your prompt and event context to the selected provider.</span>
             </div>
           </div>
         </div>

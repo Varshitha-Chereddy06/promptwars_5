@@ -29,13 +29,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   const meta = EVENT_TYPE_METADATA[currentType];
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800 transition-colors">
+    <header className="planner-header sticky top-0 z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           
           {/* Brand Logo & Tagline */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 text-white shadow-md shadow-rose-500/20">
+            <div className="brand-mark flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-500 text-white shadow-md shadow-rose-500/20">
               <Sparkles className="w-5 h-5 animate-pulse" />
             </div>
             <div>
@@ -123,11 +123,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* AI Key Status Button */}
             <button
               onClick={onOpenApiKeyModal}
-              title={hasApiKey ? 'Gemini Live AI Key Active' : 'Offline Local AI Active (Click to add Gemini Key)'}
+              title={hasApiKey ? 'Live AI key configured' : 'Offline local AI active (click to configure a live provider)'}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl transition"
             >
               <Key className="w-3.5 h-3.5 text-rose-500" />
-              <span className="hidden sm:inline">{hasApiKey ? 'Gemini API' : 'Local AI'}</span>
+              <span className="hidden sm:inline">{hasApiKey ? 'Live AI' : 'Local AI'}</span>
               <span className={`w-1.5 h-1.5 rounded-full ${hasApiKey ? 'bg-emerald-500' : 'bg-blue-400'}`} />
             </button>
 

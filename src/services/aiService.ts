@@ -1,5 +1,5 @@
 import { FullEventPlan, AIToolResult, PaletteColor } from '../types';
-import { getStoredApiKey } from './storageService';
+import { getAIProviderSettings, getStoredApiKey } from './storageService';
 import { formatCurrency } from './calculationService';
 
 export interface GenerateAIRequest {
@@ -14,13 +14,16 @@ export interface GenerateAIRequest {
  */
 export async function executeAITool(req: GenerateAIRequest): Promise<AIToolResult> {
   const apiKey = getStoredApiKey();
+  const aiSettings = getAIProviderSettings();
   const { toolId, plan, customPrompt, additionalParams } = req;
 
-  // If user provided a Gemini API Key, try live API call
+  // Use the configured live provider when a key is available.
   if (apiKey && apiKey.length > 10) {
     try {
       const prompt = buildSystemPromptForTool(toolId, plan, customPrompt, additionalParams);
-      const response = await callGeminiAPI(apiKey, prompt);
+      const response = aiSettings.provider === 'openai-compatible'
+        ? await callOpenAICompatibleAPI(apiKey, prompt, aiSettings.baseUrl, aiSettings.model)
+        : await callGeminiAPI(apiKey, prompt);
       if (response && response.trim().length > 0) {
         return {
           toolId,
@@ -30,7 +33,7 @@ export async function executeAITool(req: GenerateAIRequest): Promise<AIToolResul
         };
       }
     } catch (err) {
-      console.warn('Gemini API call failed or timed out, using high-fidelity local engine fallback:', err);
+      console.warn('Live AI call failed or timed out, using high-fidelity local engine fallback:', err);
     }
   }
 
@@ -47,31 +50,95 @@ export async function executeAITool(req: GenerateAIRequest): Promise<AIToolResul
   };
 }
 
-/**
- * Direct fetch to Gemini API
- */
-async function callGeminiAPI(apiKey: string, prompt: string): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-  const res = await fetch(url, {
+async function callOpenAICompatibleAPI(
+  apiKey: string,
+  prompt: string,
+  baseUrl: string,
+  model: string
+): Promise<string> {
+  if (!baseUrl.trim()) {
+    throw new Error('Set an API base URL in AI settings.');
+  }
+  if (!model.trim()) {
+    throw new Error('Set a model name in AI settings.');
+  }
+
+  const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, '');
+  const endpoint = normalizedBaseUrl.endsWith('/chat/completions')
+    ? normalizedBaseUrl
+    : `${normalizedBaseUrl}/chat/completions`;
+
+  const response = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey.trim()}`
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 2048,
-      }
+      model: model.trim(),
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 2048
     })
   });
 
-  if (!res.ok) {
-    throw new Error(`Gemini API error: ${res.status} ${res.statusText}`);
+  if (!response.ok) {
+    throw new Error(`AI router returned ${response.status}: ${response.statusText}`);
   }
 
-  const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Empty response from Gemini API');
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content;
+  const text = typeof content === 'string'
+    ? content
+    : Array.isArray(content)
+      ? content.map((part: { text?: string }) => part.text || '').join('')
+      : '';
+
+  if (!text.trim()) {
+    throw new Error('AI router returned an empty response.');
+  }
   return text;
+}
+
+/**
+ * Direct fetch to Gemini API with robust multi-model fallback
+ */
+async function callGeminiAPI(apiKey: string, prompt: string): Promise<string> {
+  const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-pro'];
+  let lastError: Error | null = null;
+
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+          }
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text && text.trim().length > 0) {
+          return text;
+        }
+      } else {
+        const errText = await res.text();
+        console.warn(`Model ${model} returned ${res.status}:`, errText);
+        lastError = new Error(`Gemini API error (${model}): ${res.status} ${res.statusText}`);
+      }
+    } catch (e: any) {
+      lastError = e instanceof Error ? e : new Error(String(e));
+    }
+  }
+
+  throw lastError || new Error('Failed to reach Gemini API across tested models');
 }
 
 /**
@@ -431,15 +498,121 @@ Contact: info@soiree.app | ${plan.details.city}
     }
 
     default:
-      return `### 💡 AI Event Assistant Insight
-Based on your ${plan.details.type} in ${city} with **${guests} guests** and a **$${budget.toLocaleString()}** budget:
-
-1. **Budget Status:** You have allocated $${categories.reduce((s, c) => s + c.allocatedAmount, 0).toLocaleString()} across ${categories.length} categories.
-2. **Key Recommendation:** Focus on locking down your primary venue and catering contracts first, as they represent the foundation of your event timeline.
-3. **Guest Count Sensitivity:** An increase of +20 guests will shift your catering requirement by approximately $${Math.round((budget * 0.3) / guests * 20).toLocaleString()}.
-
-Feel free to ask me to write vendor negotiation emails, generate custom timeline milestones, or create day-of itineraries!`;
+      return handleConversationalQuery(plan, customPrompt);
   }
+}
+
+/**
+ * Intelligent contextual response synthesizer for conversational queries
+ */
+function handleConversationalQuery(plan: FullEventPlan, customPrompt?: string): string {
+  const query = (customPrompt || '').toLowerCase();
+  const { details, categories, milestones } = plan;
+  const city = details.city || 'your city';
+  const guests = details.guestCount;
+  const budget = details.totalBudget;
+  const hosts = details.hostNames;
+
+  // 1. Icebreakers & Games
+  if (query.includes('icebreaker') || query.includes('game') || query.includes('activit') || query.includes('fun')) {
+    return `### 🎉 3 Sophisticated, Non-Cheesy Icebreakers
+**Tailored for:** ${hosts}'s ${details.type} with **${guests} guests** at ${details.venueName} in ${city}
+
+1. **The "Photo Scavenger Table Quest"**
+   - Place a linen card on each table with 4 prompts: *"Take a selfie with someone who traveled the furthest"*, *"Find someone who has known ${hosts} for 10+ years"*, *"Capture the wildest dance move"*. Have guests upload them to a live QR shared album. Instant mingling across tables without any forced awkwardness!
+
+2. **The "Two Truths & A Shared Story" Card**
+   - At each table place card, write one unique, hilarious fact about someone at the table (without names). Guests at the table have to guess who the fact belongs to during dinner. It sparks effortless, heartfelt storytelling.
+
+3. **The "Advice & Memory Time Capsule"**
+   - Place a beautiful glass decanter or vintage mailbox with prompt cards: *"Your best tip for a long-lasting marriage/milestone decade"* or *"The favorite adventure you’ve shared with ${hosts}"*. Announce that the hosts will open them on their 1st anniversary / next milestone!`;
+  }
+
+  // 2. Lower Costs / Budget / Trimming
+  if (query.includes('lower') || query.includes('cost') || query.includes('sav') || query.includes('cheap') || query.includes('spend')) {
+    return `### 💰 Strategic Cost-Cutting Recommendations
+**Current Target Budget:** $${budget.toLocaleString()} across ${categories.length} categories in ${city}
+
+1. **BYO Bar / Corkage License:**
+   - Sourcing wine and champagne in bulk through local wholesalers rather than an open bar package can save $1,500 – $3,000 for ${guests} guests.
+2. **Repurpose Ceremony Florals:**
+   - Contract your floral team to design movable ceremony ground meadows. Right after the ceremony, move them directly in front of the head table and photobooth.
+3. **Plated vs. Elevated Family-Style Service:**
+   - Traditional plated dinners require 1 server per 10 guests. Elevated family-style service cuts banquet staffing hours by 25–35% while creating an intimate feast.
+4. **Off-Peak Micro-Shift:**
+   - Shifting from Saturday evening to Friday night or Sunday afternoon typically cuts venue rental fees by 20–30% in ${city}.`;
+  }
+
+  // 3. Vendor Negotiation Email
+  if (query.includes('email') || query.includes('negotiat') || query.includes('letter') || query.includes('vendor')) {
+    return `### ✉️ Courteous Vendor Negotiation Email Template
+**Ready to copy & send to your prospective vendor:**
+
+\`\`\`text
+Subject: Follow-up & Partnership Question: ${details.title} on ${details.date}
+
+Dear [Vendor Name / Team],
+
+Thank you so much for sending over your proposal for our upcoming celebration on ${details.date} at ${details.venueName}. We were genuinely impressed by your portfolio and artistic approach!
+
+We are currently reviewing our final allocations for ${guests} guests. Our target cap for [Category, e.g. Photography / Florals] is around [Target Price, e.g. $${Math.round(budget * 0.1)}]. 
+
+Because you are our top choice for our event, we wanted to ask if there is any flexibility to adjust the scope (for example, slight adjustment of hours or package inclusions) to bring the investment closer to our budget? Alternatively, we would be delighted to lock in our deposit immediately if you could include [complimentary upgrade / additional hour].
+
+Thank you again for your time and kindness—we would love the opportunity to work together!
+
+Warm regards,
+${hosts}
+Contact: ${details.city}
+\`\`\``;
+  }
+
+  // 4. Timeline Bottlenecks
+  if (query.includes('timeline') || query.includes('bottleneck') || query.includes('schedule') || query.includes('deadline') || query.includes('urgent')) {
+    const overdue = milestones.filter(m => m.isOverdue || m.status === 'pending');
+    return `### ⏳ Timeline Audit & Bottleneck Analysis
+**Event Date:** ${details.date}  
+**Total Milestones:** ${milestones.length} (${milestones.filter(m => m.status === 'completed').length} completed)
+
+#### 🚨 Priority Action Items:
+${overdue.slice(0, 3).map((m, i) => `${i + 1}. **${m.title}** (Target: T-${m.daysBeforeEvent}d) — *Category: ${m.category}*`).join('\n')}
+
+#### 💡 Coordinator's Advice:
+- **72-Hour Rule:** Lock in your venue and catering minimums before ordering any custom printed signage or personalized items.
+- **Buffer Week:** Always keep the final 7 days before ${details.date} free of major decision-making; use that week strictly for vendor call sheets and rest.`;
+  }
+
+  // 5. Seating Chart & Table Guidance
+  if (query.includes('seat') || query.includes('table') || query.includes('chart') || query.includes('floor')) {
+    return `### 🪑 Seating Chart Strategy & Pro Tips
+**For ${guests} guests across tables:**
+
+1. **The "Anchor Guest" Principle:** Place 1-2 naturally outgoing, warm guests at each table to ensure conversation flows smoothly.
+2. **Speaker Proximity:** Keep older relatives, grandparents, and guests with babies away from the DJ speakers and primary bass amplifiers.
+3. **Dietary Grouping:** When possible, seat guests with similar dietary requirements (e.g., Vegan or Gluten-Free) near the kitchen access aisle for faster, error-free meal service.
+4. **Buffer Seats:** Aim for 8 guests at a 10-person round table; this provides extra elbow room for drink glassware and prevents table crowding.`;
+  }
+
+  // 6. Food, Drinks & Catering
+  if (query.includes('food') || query.includes('cater') || query.includes('menu') || query.includes('drink') || query.includes('cocktail') || query.includes('bar')) {
+    return `### 🍸 Food & Beverage Curation
+**Vibe:** ${details.vibe} in ${city}
+
+#### 🍹 Signature Cocktail Concept: *"The ${city.split(',')[0]} Sunset"*
+- **Recipe:** 2 oz artisanal bourbon or botanical gin, 0.75 oz fresh blood orange juice, 0.5 oz rosemary simple syrup, topped with dry sparkling prosecco and charred rosemary sprig.
+- **Mocktail Twist:** Blood orange juice, white peach nectar, rosemary syrup, and sparkling fever-tree club soda.
+
+#### 🍽️ Menu Pacing Tip:
+For ${guests} guests, 4 passed hors d'oeuvres during the 60-minute cocktail hour is the gold standard (approx. 4-6 bites per guest) to keep everyone happy before the main course!`;
+  }
+
+  // 7. General Contextual Fallback
+  return `### 💡 AI Event Assistant Insight: "${customPrompt || 'Event Guidance'}"
+Based on your **${details.type}** in **${city}** with **${guests} guests** and a **$${budget.toLocaleString()}** budget:
+
+1. **Grounded Recommendation:** For a *${details.vibe}* aesthetic, focus your budget on the elements guests touch and hear most: exceptional food, fluid bar service, and ambient warm lighting.
+2. **Current Budget Allocation:** $${categories.reduce((s, c) => s + c.allocatedAmount, 0).toLocaleString()} across ${categories.length} categories.
+3. **Next Recommended Action:** Open the **Timeline** tab to verify upcoming milestones, or ask me to draft a vendor negotiation email or speech draft!`;
 }
 
 function getToolTitle(toolId: string): string {

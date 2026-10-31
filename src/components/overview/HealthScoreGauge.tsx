@@ -24,7 +24,7 @@ export const HealthScoreGauge: React.FC<HealthScoreGaugeProps> = ({ metrics, onN
   const colors = getScoreColor(score);
 
   return (
-    <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-7 shadow-sm border border-stone-200 dark:border-stone-800 space-y-6">
+    <div className="planner-card bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-7 shadow-sm border border-stone-200 dark:border-stone-800 space-y-6">
       
       {/* Title */}
       <div className="flex items-center justify-between">

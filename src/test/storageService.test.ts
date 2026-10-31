@@ -5,7 +5,9 @@ import {
   savePlan,
   generateShareableUrl,
   decodeSharedPlanFromUrl,
+  getAIProviderSettings,
   getStoredApiKey,
+  setAIProviderSettings,
   setStoredApiKey
 } from '../services/storageService';
 
@@ -49,5 +51,20 @@ describe('StorageService', () => {
     expect(getStoredApiKey()).toBe('AIzaSyTestKey123');
     setStoredApiKey('');
     expect(getStoredApiKey()).toBe('');
+  });
+
+  it('stores the selected live AI provider settings', () => {
+    expect(getAIProviderSettings().provider).toBe('gemini');
+    setAIProviderSettings({
+      provider: 'openai-compatible',
+      baseUrl: 'https://router.example/v1',
+      model: 'planner-model'
+    });
+
+    expect(getAIProviderSettings()).toEqual({
+      provider: 'openai-compatible',
+      baseUrl: 'https://router.example/v1',
+      model: 'planner-model'
+    });
   });
 });

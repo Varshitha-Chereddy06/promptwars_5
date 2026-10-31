@@ -54,7 +54,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       />
 
       {/* Main Details Card (Editable) */}
-      <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-sm border border-stone-200 dark:border-stone-800 space-y-6">
+      <div className="planner-card bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-sm border border-stone-200 dark:border-stone-800 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100 dark:border-stone-800">
           <div>
             <div className="flex items-center gap-2">

@@ -17,7 +17,7 @@ export const GuestSensitivityCard: React.FC<GuestSensitivityCardProps> = ({
   sensitivity
 }) => {
   return (
-    <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-7 shadow-sm border border-stone-200 dark:border-stone-800 space-y-6">
+    <div className="planner-card bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-7 shadow-sm border border-stone-200 dark:border-stone-800 space-y-6">
       
       {/* Header */}
       <div className="flex items-center justify-between">

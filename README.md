@@ -1,6 +1,6 @@
 # ✨ Soirée — Next-Generation GenAI Event Planning Assistant
 
-> An intelligent, context-aware event planning suite for **Weddings**, **Milestone Birthdays**, and **Community Gatherings**, powered by dual-mode GenAI (Google Gemini API + resilient local offline reasoning), dynamic budget allocation, reverse-scheduled timelines, quote matrix comparison, interactive seating charts, RSVP & dietary tracking, and 8 specialized AI studio tools.
+> An intelligent, context-aware event planning suite for **Weddings**, **Milestone Birthdays**, and **Community Gatherings**, powered by dual-mode AI (Google Gemini or an OpenAI-compatible API router, plus local offline reasoning), dynamic budget allocation, reverse-scheduled timelines, quote matrix comparison, interactive seating charts, RSVP & dietary tracking, and 8 specialized AI studio tools.
 
 ---
 
@@ -51,7 +51,7 @@
 Organizing high-stakes events is often fragmented across multiple disparate spreadsheets, notes, chat groups, and generic AI prompts that lack persistent context. **Soirée** consolidates planning into an integrated, reactive ecosystem:
 - **Instant Domain Adaptation:** Switching event types dynamically reconfigures budget percentage splits, vendor checklists, reverse milestone countdowns, and aesthetic palettes.
 - **Context-Preserving GenAI:** All AI prompts automatically incorporate event parameters (guest count, city, date, total budget, vibe, host names, and current spending variances).
-- **Dual-Engine Architecture:** Operates with live **Google Gemini API** (`gemini-1.5-flash`) for unbounded generative reasoning, alongside a zero-latency, high-fidelity **Local AI Reasoning Engine** that guarantees 100% offline functionality out-of-the-box without requiring an API key.
+- **Dual-Engine Architecture:** Supports live **Google Gemini** or a configurable **OpenAI-compatible chat completions API** for generative reasoning, alongside a local response engine that works without an API key.
 
 ---
 
@@ -168,7 +168,7 @@ Switching between **Wedding**, **Birthday**, and **Community Event** adapts the 
 
 ### 2. Security & Privacy
 - **Client-Side Privacy:** All plan data is saved in the user's browser `localStorage`.
-- **Zero API Key Leakage:** User API keys are stored only in local storage, never transmitted to external third-party backends or logged in error reports.
+- **Browser-Stored API Key:** The key is kept in browser `localStorage` and sent directly to the selected AI provider for live generation. Do not use this client-side setup in a public deployment; use a server-side proxy and secret storage there.
 - **Sanitized Outputs:** All inputs and text areas are strongly typed with React escaping to prevent Cross-Site Scripting (XSS).
 - **Safe Sharing:** Share links serialize state into compressed URL client-side hashes (`#plan=base64...`), eliminating server-side database vulnerabilities.
 
@@ -196,7 +196,7 @@ Switching between **Wedding**, **Birthday**, and **Community Event** adapts the 
 ## 📌 Assumptions Made
 
 1. **Client-First Architecture:** Planners prioritize privacy and instant offline access without mandatory account sign-up. All state is stored locally with optional URL hash sharing and JSON export.
-2. **Dual AI Model:** Google Gemini API (`gemini-1.5-flash`) provides live LLM capabilities when a key is supplied; when absent, the integrated Local AI Reasoning Engine generates dynamic, contextual responses so judges and users have an uninterrupted experience.
+2. **Dual AI Model:** Google Gemini or an OpenAI-compatible API router provides live LLM capabilities when configured with a key; when absent, the integrated local response engine supplies contextual offline responses.
 3. **Reverse Milestone Standard:** Planning milestones count backwards from the event date, matching industry event coordinator practices.
 4. **Standard Venue Sizing:** Seating chart defaults are based on standard banquet rental standards (Round tables = 8–10 seats; Rectangular tables = 8–12 seats).
 
@@ -222,6 +222,11 @@ npm run dev
 ```
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
+### Configure Live AI (Optional)
+Open **Live AI / Local AI** in the top navigation, choose **OpenAI-compatible API router**, then enter the router's API key and a model name enabled by that provider. The API base URL defaults to `https://router.bynara.id/v1`; the app calls its `/chat/completions` endpoint. Live requests send the prompt and relevant event-plan context to that provider. Without a key, AI Studio and Co-Pilot use the built-in offline response engine.
+
+The key is stored in this browser's `localStorage`, which is suitable only for personal local use. For a public deployment, route requests through a backend and keep the provider key server-side. The router must allow browser CORS requests for local development.
+
 ### Build Production Bundle
 ```bash
 npm run build
@@ -238,7 +243,7 @@ npm run test
 
 ### Test Coverage Highlights:
 - `src/test/calculationService.test.ts` — Tests countdown, reverse milestone date math, health score formulas, and +20 guest sensitivity.
-- `src/test/storageService.test.ts` — Tests plan initialization, localStorage synchronization, URL hash encoding/decoding, and API key storage.
+- `src/test/storageService.test.ts` — Tests plan initialization, localStorage synchronization, URL hash encoding/decoding, API key storage, and AI provider settings.
 - `src/test/aiService.test.ts` — Tests offline AI generation for all 8 tools and conversational co-pilot context injection.
 - `src/test/components.test.tsx` — Validates Navbar, CountdownTimer, HealthScoreGauge, and GuestSensitivityCard rendering.
 

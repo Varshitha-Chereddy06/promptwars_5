@@ -4,6 +4,23 @@ import { calculateDueDate, calculateAllocations } from './calculationService';
 
 const STORAGE_KEY_PREFIX = 'soiree_event_plan_';
 const API_KEY_STORAGE_KEY = 'soiree_gemini_api_key';
+const AI_PROVIDER_STORAGE_KEY = 'soiree_ai_provider';
+const AI_BASE_URL_STORAGE_KEY = 'soiree_ai_base_url';
+const AI_MODEL_STORAGE_KEY = 'soiree_ai_model';
+
+export type AIProvider = 'gemini' | 'openai-compatible';
+
+export interface AIProviderSettings {
+  provider: AIProvider;
+  baseUrl: string;
+  model: string;
+}
+
+const DEFAULT_AI_SETTINGS: AIProviderSettings = {
+  provider: 'gemini',
+  baseUrl: 'https://router.bynara.id/v1',
+  model: ''
+};
 
 /**
  * Creates a brand new event plan for a given event type
@@ -229,5 +246,28 @@ export function setStoredApiKey(key: string): void {
     }
   } catch (e) {
     console.error('Failed to persist API key', e);
+  }
+}
+
+export function getAIProviderSettings(): AIProviderSettings {
+  try {
+    const provider = localStorage.getItem(AI_PROVIDER_STORAGE_KEY);
+    return {
+      provider: provider === 'openai-compatible' ? provider : 'gemini',
+      baseUrl: localStorage.getItem(AI_BASE_URL_STORAGE_KEY) || DEFAULT_AI_SETTINGS.baseUrl,
+      model: localStorage.getItem(AI_MODEL_STORAGE_KEY) || DEFAULT_AI_SETTINGS.model
+    };
+  } catch {
+    return DEFAULT_AI_SETTINGS;
+  }
+}
+
+export function setAIProviderSettings(settings: AIProviderSettings): void {
+  try {
+    localStorage.setItem(AI_PROVIDER_STORAGE_KEY, settings.provider);
+    localStorage.setItem(AI_BASE_URL_STORAGE_KEY, settings.baseUrl.trim());
+    localStorage.setItem(AI_MODEL_STORAGE_KEY, settings.model.trim());
+  } catch (e) {
+    console.error('Failed to persist AI provider settings', e);
   }
 }
