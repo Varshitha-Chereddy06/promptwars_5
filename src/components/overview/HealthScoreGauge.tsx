@@ -1,10 +1,11 @@
 import React from 'react';
 import { ShieldCheck, AlertTriangle, CheckCircle, ArrowRight, Activity } from 'lucide-react';
 import { PlanHealthMetrics } from '../../types';
+import { ActiveTabId } from '../layout/TabNavigation';
 
 interface HealthScoreGaugeProps {
   metrics: PlanHealthMetrics;
-  onNavigateToTab?: (tab: string) => void;
+  onNavigateToTab?: (tab: ActiveTabId) => void;
 }
 
 export const HealthScoreGauge: React.FC<HealthScoreGaugeProps> = ({ metrics, onNavigateToTab }) => {
