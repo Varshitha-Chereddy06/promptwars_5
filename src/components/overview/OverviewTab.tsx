@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Edit3, Check, DollarSign, Calendar, MapPin, Sparkles, HeartHandshake, User } from 'lucide-react';
-import { FullEventPlan, PlanHealthMetrics, SensitivityAnalysis, EventType } from '../../types';
+import { Edit3, Check, DollarSign, MapPin, Sparkles, User } from 'lucide-react';
+import { FullEventPlan, PlanHealthMetrics, SensitivityAnalysis } from '../../types';
+import { ActiveTabId } from '../layout/TabNavigation';
 import { EVENT_TYPE_METADATA } from '../../constants/presets';
 import { CountdownTimer } from './CountdownTimer';
 import { HealthScoreGauge } from './HealthScoreGauge';
@@ -12,7 +13,7 @@ interface OverviewTabProps {
   healthMetrics: PlanHealthMetrics;
   sensitivity: SensitivityAnalysis;
   onUpdateDetails: (updated: Partial<FullEventPlan['details']>) => void;
-  onNavigateToTab: (tab: any) => void;
+  onNavigateToTab: (tab: ActiveTabId) => void;
 }
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({
@@ -92,8 +93,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         {isEditing ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-stone-600 dark:text-stone-400">Event Title</label>
+              <label htmlFor="ov-title" className="text-xs font-medium text-stone-600 dark:text-stone-400">Event Title</label>
               <input
+                id="ov-title"
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -102,8 +104,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-stone-600 dark:text-stone-400">Host / Honoree Names</label>
+              <label htmlFor="ov-hosts" className="text-xs font-medium text-stone-600 dark:text-stone-400">Host / Honoree Names</label>
               <input
+                id="ov-hosts"
                 type="text"
                 value={formData.hostNames}
                 onChange={(e) => setFormData({ ...formData, hostNames: e.target.value })}
@@ -112,8 +115,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-stone-600 dark:text-stone-400">Event Date</label>
+              <label htmlFor="ov-date" className="text-xs font-medium text-stone-600 dark:text-stone-400">Event Date</label>
               <input
+                id="ov-date"
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -122,8 +126,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-stone-600 dark:text-stone-400">City & Region</label>
+              <label htmlFor="ov-city" className="text-xs font-medium text-stone-600 dark:text-stone-400">City &amp; Region</label>
               <input
+                id="ov-city"
                 type="text"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
@@ -132,8 +137,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-stone-600 dark:text-stone-400">Venue Name</label>
+              <label htmlFor="ov-venue" className="text-xs font-medium text-stone-600 dark:text-stone-400">Venue Name</label>
               <input
+                id="ov-venue"
                 type="text"
                 value={formData.venueName}
                 onChange={(e) => setFormData({ ...formData, venueName: e.target.value })}
@@ -142,8 +148,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-stone-600 dark:text-stone-400">Total Budget ($)</label>
+              <label htmlFor="ov-budget" className="text-xs font-medium text-stone-600 dark:text-stone-400">Total Budget ($)</label>
               <input
+                id="ov-budget"
                 type="number"
                 value={formData.totalBudget}
                 onChange={(e) => setFormData({ ...formData, totalBudget: Number(e.target.value) })}
@@ -152,8 +159,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
 
             <div className="sm:col-span-2 lg:col-span-3 space-y-1">
-              <label className="text-xs font-medium text-stone-600 dark:text-stone-400">Theme / Vibe</label>
+              <label htmlFor="ov-vibe" className="text-xs font-medium text-stone-600 dark:text-stone-400">Theme / Vibe</label>
               <select
+                id="ov-vibe"
                 value={formData.vibe}
                 onChange={(e) => setFormData({ ...formData, vibe: e.target.value })}
                 className="w-full px-3 py-2 text-sm bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 focus:ring-2 focus:ring-rose-500"

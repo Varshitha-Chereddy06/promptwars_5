@@ -16,8 +16,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, plan })
 
   const shareUrl = generateShareableUrl(plan);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch {
+      // Fallback: select the input text for manual copy
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -55,18 +59,21 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, plan })
         <div className="p-6 space-y-5">
           {/* Share Link Box */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400">
+            <label htmlFor="share-url-input" className="block text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400">
               Instant Shareable Plan Link
             </label>
             <div className="flex items-center gap-2">
               <input
+                id="share-url-input"
                 type="text"
                 readOnly
                 value={shareUrl}
+                aria-label="Shareable plan URL"
                 className="flex-1 px-3.5 py-2.5 text-xs bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-700 dark:text-stone-300 font-mono truncate select-all focus:outline-none"
               />
               <button
                 onClick={handleCopy}
+                aria-label={copied ? 'Link copied to clipboard' : 'Copy link to clipboard'}
                 className={`px-4 py-2.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition ${
                   copied
                     ? 'bg-emerald-600 text-white'

@@ -144,6 +144,8 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="Paste your API key"
+                autoComplete="off"
+                spellCheck={false}
                 className="w-full px-3.5 py-2.5 text-sm bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-rose-500 transition font-mono"
               />
             </div>
@@ -153,7 +155,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
                 <a
                   href="https://aistudio.google.com/app/apikey"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="text-rose-600 hover:text-rose-700 inline-flex items-center gap-1 font-medium underline"
                 >
                   Get free Gemini Key <ExternalLink className="w-3 h-3" />

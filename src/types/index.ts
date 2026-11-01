@@ -169,7 +169,7 @@ export interface ChatMessage {
   timestamp: string;
   actionSuggested?: {
     type: 'add_expense' | 'add_milestone' | 'adjust_budget';
-    payload: any;
+    payload: Record<string, unknown>;
   };
 }
 

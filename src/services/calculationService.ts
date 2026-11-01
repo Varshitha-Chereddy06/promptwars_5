@@ -72,9 +72,10 @@ export function calculateCountdown(eventDateStr: string, eventTimeStr: string = 
  * Recalculates category allocations when total budget changes or percentages are adjusted
  */
 export function calculateAllocations(totalBudget: number, categories: BudgetCategory[]): BudgetCategory[] {
+  const safeBudget = Math.max(0, totalBudget);
   return categories.map(cat => ({
     ...cat,
-    allocatedAmount: Math.round((totalBudget * (cat.percentage || 0)) / 100)
+    allocatedAmount: Math.round((safeBudget * (cat.percentage || 0)) / 100)
   }));
 }
 

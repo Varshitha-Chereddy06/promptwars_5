@@ -151,6 +151,7 @@ export const AICoPilotDrawer: React.FC<AICoPilotDrawerProps> = ({
           <button
             key={prompt}
             onClick={() => handleSend(prompt)}
+            aria-label={`Quick prompt: ${prompt}`}
             className="px-2.5 py-1 text-[11px] font-medium rounded-full bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 whitespace-nowrap transition"
           >
             {prompt}
@@ -169,14 +170,17 @@ export const AICoPilotDrawer: React.FC<AICoPilotDrawerProps> = ({
         >
           <input
             type="text"
+            id="co-pilot-input"
             placeholder="Ask anything about your event..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            aria-label="Ask Soirée AI Co-Pilot a question"
             className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-rose-500"
           />
           <button
             type="submit"
             disabled={!input.trim() || isTyping}
+            aria-label="Send message"
             className="p-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white rounded-xl transition shadow-sm"
           >
             <Send className="w-4 h-4" />

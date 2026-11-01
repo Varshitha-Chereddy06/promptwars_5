@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, AlertTriangle, ShieldCheck, TrendingDown, Wand2, ArrowUpRight, DollarSign, X } from 'lucide-react';
-import { BudgetCategory, ExpenseItem, FullEventPlan } from '../../types';
+import { BudgetCategory, ExpenseItem } from '../../types';
 import { formatCurrency } from '../../services/calculationService';
 
 interface BudgetTabProps {
@@ -245,6 +245,7 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({
               </h3>
               <button
                 onClick={() => setIsExpenseModalOpen(false)}
+                aria-label="Close expense modal"
                 className="p-1 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
               >
                 <X className="w-5 h-5" />
@@ -253,8 +254,9 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({
 
             <form onSubmit={handleCreateExpense} className="p-6 space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-stone-700 dark:text-stone-300">Category</label>
+                <label htmlFor="exp-category" className="text-xs font-semibold text-stone-700 dark:text-stone-300">Category</label>
                 <select
+                  id="exp-category"
                   value={selectedCategoryId}
                   onChange={(e) => setSelectedCategoryId(e.target.value)}
                   className="w-full px-3.5 py-2 text-sm bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100"
@@ -268,8 +270,9 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-stone-700 dark:text-stone-300">Expense Description</label>
+                <label htmlFor="exp-name" className="text-xs font-semibold text-stone-700 dark:text-stone-300">Expense Description</label>
                 <input
+                  id="exp-name"
                   type="text"
                   required
                   placeholder="e.g. Venue booking deposit, DJ retainer"
@@ -281,8 +284,9 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-stone-700 dark:text-stone-300">Amount ($)</label>
+                  <label htmlFor="exp-amount" className="text-xs font-semibold text-stone-700 dark:text-stone-300">Amount ($)</label>
                   <input
+                    id="exp-amount"
                     type="number"
                     required
                     step="0.01"
@@ -294,8 +298,9 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-stone-700 dark:text-stone-300">Date Paid</label>
+                  <label htmlFor="exp-date" className="text-xs font-semibold text-stone-700 dark:text-stone-300">Date Paid</label>
                   <input
+                    id="exp-date"
                     type="date"
                     value={expenseDate}
                     onChange={(e) => setExpenseDate(e.target.value)}
@@ -305,8 +310,9 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-stone-700 dark:text-stone-300">Paid To / Vendor Name</label>
+                <label htmlFor="exp-paid-to" className="text-xs font-semibold text-stone-700 dark:text-stone-300">Paid To / Vendor Name</label>
                 <input
+                  id="exp-paid-to"
                   type="text"
                   placeholder="e.g. Magnolia Ballroom, Lumière Photography"
                   value={expensePaidTo}

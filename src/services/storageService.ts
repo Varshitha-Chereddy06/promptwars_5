@@ -154,12 +154,16 @@ export function loadPlan(type: EventType): FullEventPlan {
 }
 
 /**
- * Saves plan to localStorage
+ * Saves plan to localStorage. Creates an immutable copy before persisting
+ * so the original plan reference is never mutated outside of React state.
  */
 export function savePlan(plan: FullEventPlan): void {
   try {
-    plan.details.updatedAt = new Date().toISOString();
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}${plan.details.type}`, JSON.stringify(plan));
+    const planToSave: FullEventPlan = {
+      ...plan,
+      details: { ...plan.details, updatedAt: new Date().toISOString() }
+    };
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${plan.details.type}`, JSON.stringify(planToSave));
   } catch (err) {
     console.error('Failed to save plan to localStorage', err);
   }

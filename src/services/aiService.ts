@@ -64,6 +64,15 @@ async function callOpenAICompatibleAPI(
   }
 
   const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, '');
+  // Validate the base URL is a safe https endpoint
+  try {
+    const parsed = new URL(normalizedBaseUrl);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      throw new Error('API base URL must use http or https protocol.');
+    }
+  } catch {
+    throw new Error('Invalid API base URL provided. Please check your AI settings.');
+  }
   const endpoint = normalizedBaseUrl.endsWith('/chat/completions')
     ? normalizedBaseUrl
     : `${normalizedBaseUrl}/chat/completions`;
@@ -207,13 +216,13 @@ function generateLocalAIEngineResponse(
   customPrompt?: string,
   params?: Record<string, string>
 ): string {
-  const { details, categories } = plan;
-  const city = plan.details.city || 'your city';
-  const vibe = plan.details.vibe || 'celebratory';
-  const guests = plan.details.guestCount;
-  const budget = plan.details.totalBudget;
-  const title = plan.details.title;
-  const hosts = plan.details.hostNames;
+  const { details } = plan;
+  const city = details.city || 'your city';
+  const vibe = details.vibe || 'celebratory';
+  const guests = details.guestCount;
+  const budget = details.totalBudget;
+  const title = details.title;
+  const hosts = details.hostNames;
 
   switch (toolId) {
     case 'theme_studio': {
