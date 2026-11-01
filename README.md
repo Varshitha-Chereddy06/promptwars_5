@@ -25,7 +25,7 @@
    - [Security & Privacy](#2-security--privacy)
    - [Efficiency & Performance](#3-efficiency--performance)
    - [Testing & Validation](#4-testing--validation)
-   - [Accessibility (WCAG 2.1 AA)](#5-accessibility-wcag-21-aa)
+   - [Accessibility](#5-accessibility)
    - [Problem Statement Alignment](#6-problem-statement-alignment)
 6. [Assumptions Made](#-assumptions-made)
 7. [Getting Started & Local Development](#-getting-started--local-development)
@@ -162,30 +162,29 @@ Switching between **Wedding**, **Birthday**, and **Community Event** adapts the 
 ## 🛡️ Evaluation Focus Areas
 
 ### 1. Code Quality & Architecture
-- **Strict TypeScript:** 100% typed entities (`EventDetails`, `BudgetCategory`, `Milestone`, `Vendor`, `Guest`, `Table`, `MoodboardTheme`).
-- **Clean Architecture:** Strict separation between types (`src/types/`), domain calculation algorithms (`src/services/calculationService.ts`), persistence (`src/services/storageService.ts`), AI execution (`src/services/aiService.ts`), and UI components.
-- **Single-Responsibility Components:** Highly modular React components with zero spaghetti code.
+- **Strict TypeScript:** Domain entities such as `EventDetails`, `BudgetCategory`, `Milestone`, `Vendor`, `Guest`, `Table`, and `MoodboardTheme` have explicit types.
+- **Separated concerns:** Types, calculations, persistence, AI execution, and UI components are organized into focused modules.
+- **Modular UI:** Event planning features are split into React components by responsibility.
 
 ### 2. Security & Privacy
 - **Client-Side Privacy:** All plan data is saved in the user's browser `localStorage`.
 - **Browser-Stored API Key:** The key is kept in browser `localStorage` and sent directly to the selected AI provider for live generation. Do not use this client-side setup in a public deployment; use a server-side proxy and secret storage there.
 - **Sanitized Outputs:** All inputs and text areas are strongly typed with React escaping to prevent Cross-Site Scripting (XSS).
-- **Safe Sharing:** Share links serialize state into compressed URL client-side hashes (`#plan=base64...`), eliminating server-side database vulnerabilities.
+- **Client-side sharing:** Share links encode event details, budget categories and expenses, milestones, vendors, and the selected theme in the URL hash. They do not include guest lists or AI chat history. Links are not compressed or encrypted; anyone with a link can view its encoded plan data, so avoid sharing sensitive information.
 
 ### 3. Efficiency & Performance
 - **Vite 6 Bundler:** Instant hot-module replacement and optimized tree-shaking.
-- **Lightweight Production Build:** Complete JavaScript bundle is only **~340 kB** (~95 kB gzipped), well within the competition's **< 10 MB** repository limit.
-- **Zero-Lag Reactivity:** Mathematical calculations (sensitivity analysis, countdown timers, health scores) execute in $< 5\text{ms}$.
+- **Lightweight Production Build:** The current production output is approximately **434 kB** before gzip (**117 kB** gzipped across JavaScript and CSS).
+- **Client-side calculations:** Budget allocations, countdowns, guest sensitivity, and plan health are calculated in the browser without additional server requests.
 
 ### 4. Testing & Validation
-- **Vitest & React Testing Library:** 22 automated tests covering calculation math, due date reverse scheduling, health scores, guest sensitivity surges, storage serialization, offline AI synthesis, and UI component rendering.
-- **100% Passing Test Suite:** Verified across unit, service, and component levels.
+- **Vitest & React Testing Library:** 30 automated tests cover calculations, reverse-scheduled dates, health scores, guest sensitivity, persistence and sharing, AI provider requests and fallback, and UI behavior.
+- **Automated validation:** Run `npm test` and `npm run build` to validate the current code.
 
-### 5. Accessibility (WCAG 2.1 AA)
-- **Semantic HTML5:** Native `<header>`, `<main>`, `<nav>`, `<button>`, and `<table>` elements with accessible labels.
-- **High-Contrast Palette:** Complies with WCAG 2.1 AA contrast ratios for light and dark backgrounds.
-- **Keyboard Navigation:** All interactive modals, sliders, tabs, and buttons are fully navigable via `Tab`, `Enter`, and `Space`.
-- **ARIA Live Regions:** Screen reader tags for modal dialogs (`role="dialog"`, `aria-modal="true"`), tab lists (`role="tablist"`), and health score indicators.
+### 5. Accessibility
+- **Semantic controls:** Native buttons, navigation landmarks, labeled form fields, and dialog labels support assistive technologies.
+- **State communication:** Selected event types, active planning sections, and copy feedback are exposed to assistive technology.
+- **Keyboard focus:** Visible focus styles are provided for interactive elements. A formal WCAG conformance audit has not been performed.
 
 ### 6. Problem Statement Alignment
 - Directly solves all requirements of the challenge statement: planning weddings, birthdays, and community events with dynamic budgets, reverse timelines, vendor checklists, and personalized GenAI ideas.
@@ -223,7 +222,7 @@ npm run dev
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ### Configure Live AI (Optional)
-Open **Live AI / Local AI** in the top navigation, choose **OpenAI-compatible API router**, then enter the router's API key and a model name enabled by that provider. The API base URL defaults to `https://router.bynara.id/v1`; the app calls its `/chat/completions` endpoint. Live requests send the prompt and relevant event-plan context to that provider. Without a key, AI Studio and Co-Pilot use the built-in offline response engine.
+Open **Live AI / Local AI** in the top navigation, choose **OpenAI-compatible API router**, then enter the router's API key and a model name enabled by that provider. The API base URL defaults to `https://router.bynara.id/v1`; the app calls its `/chat/completions` endpoint. The URL must use HTTPS and must not contain credentials or query parameters. Live requests send the prompt and relevant event-plan context to that provider. Without a key, AI Studio and Co-Pilot use the built-in offline response engine.
 
 The key is stored in this browser's `localStorage`, which is suitable only for personal local use. For a public deployment, route requests through a backend and keep the provider key server-side. The router must allow browser CORS requests for local development.
 

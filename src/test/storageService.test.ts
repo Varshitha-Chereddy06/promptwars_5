@@ -10,10 +10,12 @@ import {
   setAIProviderSettings,
   setStoredApiKey
 } from '../services/storageService';
+import { PRESET_THEMES } from '../constants/presets';
 
 describe('StorageService', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    window.location.hash = '';
   });
 
   it('creates distinct initial plans for wedding, birthday, and community', () => {
@@ -39,10 +41,38 @@ describe('StorageService', () => {
     expect(loaded.details.title).toBe('Test 40th Birthday');
   });
 
-  it('generates a shareable URL containing base64 encoded state', () => {
+  it('round-trips the shared event, budget expenses, milestones, vendors, and selected theme', () => {
     const plan = createInitialPlan('wedding');
+    plan.expenses.push({
+      id: 'expense-shared',
+      categoryId: plan.categories[0].id,
+      name: 'Final venue payment',
+      amount: 1250,
+      date: '2026-10-30',
+      paidTo: 'Magnolia Estate'
+    });
+    plan.activeTheme = PRESET_THEMES[1];
     const url = generateShareableUrl(plan);
     expect(url).toContain('#plan=');
+
+    window.location.hash = new URL(url).hash;
+    const sharedPlan = decodeSharedPlanFromUrl();
+
+    expect(sharedPlan?.details).toEqual(plan.details);
+    expect(sharedPlan?.categories).toEqual(plan.categories);
+    expect(sharedPlan?.expenses).toEqual(plan.expenses);
+    expect(sharedPlan?.milestones).toEqual(plan.milestones);
+    expect(sharedPlan?.vendors).toEqual(plan.vendors);
+    expect(sharedPlan?.activeTheme).toEqual(plan.activeTheme);
+  });
+
+  it('ignores a shared plan with an unsupported event type', () => {
+    const invalidPayload = btoa(encodeURIComponent(JSON.stringify({
+      d: { type: 'unsupported-event' }
+    })));
+    window.location.hash = `#plan=${invalidPayload}`;
+
+    expect(decodeSharedPlanFromUrl()).toBeNull();
   });
 
   it('safely stores and removes API keys in localStorage', () => {

@@ -173,22 +173,19 @@ export function savePlan(plan: FullEventPlan): void {
  * Encodes plan into a shareable URL hash
  */
 export function generateShareableUrl(plan: FullEventPlan): string {
-  try {
-    const minified = {
-      d: plan.details,
-      c: plan.categories,
-      m: plan.milestones,
-      v: plan.vendors,
-      t: plan.activeTheme?.id
-    };
-    const jsonStr = JSON.stringify(minified);
-    const base64 = btoa(encodeURIComponent(jsonStr));
-    const url = new URL(window.location.href);
-    url.hash = `plan=${base64}`;
-    return url.toString();
-  } catch {
-    return window.location.href;
-  }
+  const minified = {
+    d: plan.details,
+    c: plan.categories,
+    e: plan.expenses,
+    m: plan.milestones,
+    v: plan.vendors,
+    t: plan.activeTheme?.id
+  };
+  const jsonStr = JSON.stringify(minified);
+  const base64 = btoa(encodeURIComponent(jsonStr));
+  const url = new URL(window.location.href);
+  url.hash = `plan=${base64}`;
+  return url.toString();
 }
 
 /**
@@ -201,12 +198,22 @@ export function decodeSharedPlanFromUrl(): FullEventPlan | null {
       const b64 = hash.replace('#plan=', '');
       const jsonStr = decodeURIComponent(atob(b64));
       const minified = JSON.parse(jsonStr);
-      if (minified && minified.d && minified.d.type) {
+      const eventType = minified?.d?.type;
+      if (
+        minified &&
+        minified.d &&
+        (eventType === 'wedding' || eventType === 'birthday' || eventType === 'community')
+      ) {
         const full = createInitialPlan(minified.d.type);
         full.details = { ...full.details, ...minified.d };
-        if (minified.c) full.categories = minified.c;
-        if (minified.m) full.milestones = minified.m;
-        if (minified.v) full.vendors = minified.v;
+        if (Array.isArray(minified.c)) full.categories = minified.c;
+        if (Array.isArray(minified.e)) full.expenses = minified.e;
+        if (Array.isArray(minified.m)) full.milestones = minified.m;
+        if (Array.isArray(minified.v)) full.vendors = minified.v;
+        if (typeof minified.t === 'string') {
+          const sharedTheme = PRESET_THEMES.find(theme => theme.id === minified.t);
+          if (sharedTheme) full.activeTheme = sharedTheme;
+        }
         return full;
       }
     }

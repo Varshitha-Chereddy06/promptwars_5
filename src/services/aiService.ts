@@ -64,14 +64,20 @@ async function callOpenAICompatibleAPI(
   }
 
   const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, '');
-  // Validate the base URL is a safe https endpoint
+  let parsedBaseUrl: URL;
   try {
-    const parsed = new URL(normalizedBaseUrl);
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-      throw new Error('API base URL must use http or https protocol.');
-    }
+    parsedBaseUrl = new URL(normalizedBaseUrl);
   } catch {
     throw new Error('Invalid API base URL provided. Please check your AI settings.');
+  }
+  if (
+    parsedBaseUrl.protocol !== 'https:' ||
+    parsedBaseUrl.username ||
+    parsedBaseUrl.password ||
+    parsedBaseUrl.search ||
+    parsedBaseUrl.hash
+  ) {
+    throw new Error('API base URL must be HTTPS and must not contain credentials, query parameters, or a fragment.');
   }
   const endpoint = normalizedBaseUrl.endsWith('/chat/completions')
     ? normalizedBaseUrl
@@ -118,10 +124,13 @@ async function callGeminiAPI(apiKey: string, prompt: string): Promise<string> {
 
   for (const model of models) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey.trim()
+        },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -142,7 +151,7 @@ async function callGeminiAPI(apiKey: string, prompt: string): Promise<string> {
         console.warn(`Model ${model} returned ${res.status}:`, errText);
         lastError = new Error(`Gemini API error (${model}): ${res.status} ${res.statusText}`);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       lastError = e instanceof Error ? e : new Error(String(e));
     }
   }

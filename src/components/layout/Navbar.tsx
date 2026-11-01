@@ -54,10 +54,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Event Type Switcher Segmented Control */}
-          <div className="flex items-center p-1 bg-stone-100 dark:bg-stone-800 rounded-2xl border border-stone-200/60 dark:border-stone-700/60" role="tablist" aria-label="Event Type Selection">
+          <div className="flex items-center p-1 bg-stone-100 dark:bg-stone-800 rounded-2xl border border-stone-200/60 dark:border-stone-700/60" role="group" aria-label="Event type selection">
             <button
-              role="tab"
-              aria-selected={currentType === 'wedding'}
+              aria-pressed={currentType === 'wedding'}
               onClick={() => onSelectType('wedding')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition-all ${
                 currentType === 'wedding'
@@ -70,8 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             <button
-              role="tab"
-              aria-selected={currentType === 'birthday'}
+              aria-pressed={currentType === 'birthday'}
               onClick={() => onSelectType('birthday')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition-all ${
                 currentType === 'birthday'
@@ -84,8 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             <button
-              role="tab"
-              aria-selected={currentType === 'community'}
+              aria-pressed={currentType === 'community'}
               onClick={() => onSelectType('community')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition-all ${
                 currentType === 'community'

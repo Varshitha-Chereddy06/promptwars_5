@@ -40,8 +40,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             return (
               <button
                 key={tab.id}
-                role="tab"
-                aria-selected={isActive}
+                aria-current={isActive ? 'page' : undefined}
                 onClick={() => onSelectTab(tab.id)}
                 className={`planner-nav-tab group relative flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-medium rounded-xl transition-all ${
                   isActive

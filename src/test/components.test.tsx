@@ -1,14 +1,17 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { Navbar } from '../components/layout/Navbar';
 import { CountdownTimer } from '../components/overview/CountdownTimer';
 import { HealthScoreGauge } from '../components/overview/HealthScoreGauge';
 import { GuestSensitivityCard } from '../components/overview/GuestSensitivityCard';
 import { HowToUseModal } from '../components/common/HowToUseModal';
+import { ShareModal } from '../components/common/ShareModal';
+import { TabNavigation } from '../components/layout/TabNavigation';
+import { createInitialPlan } from '../services/storageService';
 
 describe('UI Components', () => {
-  it('renders Navbar with event type switcher and health badge', () => {
+  it('renders Navbar with an accessible event type switcher and health badge', () => {
     const healthMetrics = {
       score: 88,
       rating: 'excellent' as const,
@@ -35,10 +38,60 @@ describe('UI Components', () => {
     );
 
     expect(screen.getByText('Soirée')).toBeInTheDocument();
-    expect(screen.getByText('Wedding')).toBeInTheDocument();
-    expect(screen.getByText('Birthday')).toBeInTheDocument();
-    expect(screen.getByText('Community')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Wedding/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /Birthday/ })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: /Community/ })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByText('How to Use')).toBeInTheDocument();
+  });
+
+  it('marks the active planning section as the current page', () => {
+    const onSelectTab = vi.fn();
+    render(
+      <TabNavigation
+        activeTab="overview"
+        onSelectTab={onSelectTab}
+        overdueCount={2}
+        overBudgetCount={1}
+        pendingRsvpCount={3}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /Overview/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: /Budget/ })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('button', { name: /Budget/ })).toHaveTextContent('1');
+    expect(screen.getByRole('button', { name: /Timeline/ })).toHaveTextContent('2');
+    expect(screen.getByRole('button', { name: /RSVP & Diets/ })).toHaveTextContent('3');
+
+    screen.getByRole('button', { name: /Budget/ }).click();
+    expect(onSelectTab).toHaveBeenCalledWith('budget');
+  });
+
+  it('selects the share link and announces manual copy when clipboard access fails', async () => {
+    const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    const writeText = vi.fn().mockRejectedValue(new Error('Clipboard unavailable'));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText }
+    });
+    const selectSpy = vi.spyOn(HTMLInputElement.prototype, 'select').mockImplementation(() => undefined);
+
+    try {
+      render(<ShareModal isOpen={true} onClose={vi.fn()} plan={createInitialPlan('wedding')} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Copy link to clipboard' }));
+
+      expect(await screen.findByRole('status')).toHaveTextContent(
+        'Automatic copy is unavailable. The link is selected for you to copy manually.'
+      );
+      expect(selectSpy).toHaveBeenCalled();
+      expect(writeText).toHaveBeenCalledWith(expect.stringContaining('#plan='));
+    } finally {
+      selectSpy.mockRestore();
+      if (clipboardDescriptor) {
+        Object.defineProperty(navigator, 'clipboard', clipboardDescriptor);
+      } else {
+        Reflect.deleteProperty(navigator, 'clipboard');
+      }
+    }
   });
 
   it('renders CountdownTimer with location details', () => {

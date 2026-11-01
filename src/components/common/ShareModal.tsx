@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Share2, Copy, Check, Download, FileJson, X, Globe, Sparkles } from 'lucide-react';
 import { FullEventPlan } from '../../types';
 import { generateShareableUrl, exportPlanAsJSON } from '../../services/storageService';
@@ -11,19 +11,37 @@ interface ShareModalProps {
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, plan }) => {
   const [copied, setCopied] = useState(false);
+  const [copyMessage, setCopyMessage] = useState('');
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareError, setShareError] = useState('');
+  const shareUrlInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      setShareUrl(generateShareableUrl(plan));
+      setShareError('');
+    } catch (error) {
+      console.error('Failed to generate shareable plan URL', error);
+      setShareUrl('');
+      setShareError('Unable to create a share link. Please try again.');
+    }
+  }, [isOpen, plan]);
 
   if (!isOpen) return null;
 
-  const shareUrl = generateShareableUrl(plan);
-
   const handleCopy = async () => {
+    if (!shareUrl) return;
     try {
       await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setCopyMessage('Share link copied to clipboard.');
+      window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback: select the input text for manual copy
+      shareUrlInputRef.current?.select();
+      setCopied(false);
+      setCopyMessage('Automatic copy is unavailable. The link is selected for you to copy manually.');
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleExportJSON = () => {
@@ -64,6 +82,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, plan })
             </label>
             <div className="flex items-center gap-2">
               <input
+                ref={shareUrlInputRef}
                 id="share-url-input"
                 type="text"
                 readOnly
@@ -73,6 +92,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, plan })
               />
               <button
                 onClick={handleCopy}
+                disabled={!shareUrl}
                 aria-label={copied ? 'Link copied to clipboard' : 'Copy link to clipboard'}
                 className={`px-4 py-2.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition ${
                   copied
@@ -84,8 +104,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, plan })
                 <span>{copied ? 'Copied!' : 'Copy'}</span>
               </button>
             </div>
+            <p className="text-[11px] text-stone-500" role="status" aria-live="polite">
+              {shareError || copyMessage}
+            </p>
             <p className="text-[11px] text-stone-500">
-              Anyone with this link can open your complete budget, timeline, and vendor matrix instantly in their browser!
+              Anyone with this link can view the event details, budgets and expenses, milestones, vendor contacts, and theme. Guest lists and AI chat history are not included. Only share it with people you trust.
             </p>
           </div>
 

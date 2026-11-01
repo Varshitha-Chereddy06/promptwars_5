@@ -1,8 +1,18 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { executeAITool } from '../services/aiService';
-import { createInitialPlan } from '../services/storageService';
+import {
+  createInitialPlan,
+  setAIProviderSettings,
+  setStoredApiKey
+} from '../services/storageService';
 
 describe('AIService', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it('synthesizes high-fidelity offline responses for all 8 core tools', async () => {
     const plan = createInitialPlan('wedding');
     const tools = [
@@ -43,5 +53,79 @@ describe('AIService', () => {
     });
     expect(res.content).toBeDefined();
     expect(res.content.length).toBeGreaterThan(30);
+  });
+
+  it('sends Gemini API keys in a header instead of the request URL', async () => {
+    setStoredApiKey('test-gemini-api-key');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: 'Gemini response' }] } }]
+      })
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await executeAITool({
+      toolId: 'theme_studio',
+      plan: createInitialPlan('wedding')
+    });
+
+    expect(result.content).toBe('Gemini response');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).not.toContain('test-gemini-api-key');
+    expect(options.headers['x-goog-api-key']).toBe('test-gemini-api-key');
+  });
+
+  it('does not send API keys to non-HTTPS OpenAI-compatible endpoints', async () => {
+    setStoredApiKey('test-router-api-key');
+    setAIProviderSettings({
+      provider: 'openai-compatible',
+      baseUrl: 'http://router.example/v1',
+      model: 'planner-model'
+    });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const result = await executeAITool({
+      toolId: 'theme_studio',
+      plan: createInitialPlan('wedding')
+    });
+
+    expect(result.content.length).toBeGreaterThan(50);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uses the configured model and key with a valid HTTPS API router', async () => {
+    setStoredApiKey('test-router-api-key');
+    setAIProviderSettings({
+      provider: 'openai-compatible',
+      baseUrl: 'https://router.example/v1',
+      model: 'planner-model'
+    });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'Router response' } }]
+      })
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await executeAITool({
+      toolId: 'theme_studio',
+      plan: createInitialPlan('wedding')
+    });
+
+    expect(result.content).toBe('Router response');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://router.example/v1/chat/completions',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer test-router-api-key'
+        }),
+        body: expect.stringContaining('"model":"planner-model"')
+      })
+    );
   });
 });
