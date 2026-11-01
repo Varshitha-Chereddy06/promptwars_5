@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Navbar } from '../components/layout/Navbar';
@@ -8,6 +7,7 @@ import { GuestSensitivityCard } from '../components/overview/GuestSensitivityCar
 import { HowToUseModal } from '../components/common/HowToUseModal';
 import { ShareModal } from '../components/common/ShareModal';
 import { TabNavigation } from '../components/layout/TabNavigation';
+import { VendorsTab } from '../components/vendors/VendorsTab';
 import { createInitialPlan } from '../services/storageService';
 
 describe('UI Components', () => {
@@ -163,5 +163,29 @@ describe('UI Components', () => {
     expect(screen.getByText('How to Use Soirée')).toBeInTheDocument();
     expect(screen.getByText('Step-by-Step Guide')).toBeInTheDocument();
     expect(screen.getByText('Pick Your Event Type Persona')).toBeInTheDocument();
+  });
+
+  it('saves the primary contact when adding a vendor', () => {
+    const onAddVendor = vi.fn();
+    render(
+      <VendorsTab
+        vendors={[]}
+        onUpdateVendor={vi.fn()}
+        onAddVendor={onAddVendor}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add New Vendor' }));
+    fireEvent.change(screen.getByPlaceholderText('e.g. Silver Fern Floral Studio'), {
+      target: { value: 'Silver Fern Floral Studio' }
+    });
+    fireEvent.change(screen.getByLabelText('Primary Contact'), {
+      target: { value: 'Avery Smith' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Vendor' }));
+
+    expect(onAddVendor).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Silver Fern Floral Studio', contactName: 'Avery Smith' })
+    );
   });
 });

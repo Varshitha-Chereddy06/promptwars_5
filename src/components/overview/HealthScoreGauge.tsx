@@ -1,14 +1,12 @@
 import React from 'react';
-import { ShieldCheck, AlertTriangle, CheckCircle, ArrowRight, Activity } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, CheckCircle, Activity } from 'lucide-react';
 import { PlanHealthMetrics } from '../../types';
-import { ActiveTabId } from '../layout/TabNavigation';
 
 interface HealthScoreGaugeProps {
   metrics: PlanHealthMetrics;
-  onNavigateToTab?: (tab: ActiveTabId) => void;
 }
 
-export const HealthScoreGauge: React.FC<HealthScoreGaugeProps> = ({ metrics, onNavigateToTab }) => {
+export const HealthScoreGauge: React.FC<HealthScoreGaugeProps> = ({ metrics }) => {
   const { score, rating, budgetHealthScore, timelineHealthScore, vendorHealthScore, rsvpHealthScore, issues, recommendations } = metrics;
 
   // SVG circular progress calculation

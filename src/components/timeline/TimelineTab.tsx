@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Calendar, CheckCircle2, Clock, AlertCircle, Plus, Filter, Wand2, X, User } from 'lucide-react';
-import { Milestone, MilestoneStatus, FullEventPlan } from '../../types';
+import { Calendar, CheckCircle2, Clock, AlertCircle, Plus, Wand2, X, User } from 'lucide-react';
+import { Milestone, MilestoneStatus } from '../../types';
 import { formatDate, isMilestoneOverdue, calculateDueDate } from '../../services/calculationService';
 
 interface TimelineTabProps {

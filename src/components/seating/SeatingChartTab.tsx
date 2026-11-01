@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
-import { Armchair, Plus, Users, AlertCircle, CheckCircle2, Trash2, X, Move, Sparkles } from 'lucide-react';
+import { Plus, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { Table, Guest, TableShape } from '../../types';
 
 interface SeatingChartTabProps {
   tables: Table[];
   guests: Guest[];
   onUpdateTables: (tables: Table[]) => void;
-  onUpdateGuest: (guest: Guest) => void;
 }
 
 export const SeatingChartTab: React.FC<SeatingChartTabProps> = ({
   tables,
   guests,
-  onUpdateTables,
-  onUpdateGuest
+  onUpdateTables
 }) => {
   const [selectedTableId, setSelectedTableId] = useState<string>(tables[0]?.id || '');
   const [isAddTableOpen, setIsAddTableOpen] = useState(false);
@@ -68,13 +66,6 @@ export const SeatingChartTab: React.FC<SeatingChartTabProps> = ({
       return t;
     });
     onUpdateTables(updated);
-  };
-
-  const handleDeleteTable = (tableId: string) => {
-    if (tables.length <= 1) return;
-    const updated = tables.filter(t => t.id !== tableId);
-    onUpdateTables(updated);
-    setSelectedTableId(updated[0]?.id || '');
   };
 
   return (

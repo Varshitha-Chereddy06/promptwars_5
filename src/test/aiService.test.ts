@@ -3,12 +3,13 @@ import { executeAITool } from '../services/aiService';
 import {
   createInitialPlan,
   setAIProviderSettings,
-  setStoredApiKey
+  setRuntimeApiKey
 } from '../services/storageService';
 
 describe('AIService', () => {
   beforeEach(() => {
     localStorage.clear();
+    setRuntimeApiKey('');
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -56,7 +57,7 @@ describe('AIService', () => {
   });
 
   it('sends Gemini API keys in a header instead of the request URL', async () => {
-    setStoredApiKey('test-gemini-api-key');
+    setRuntimeApiKey('test-gemini-api-key');
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -78,7 +79,7 @@ describe('AIService', () => {
   });
 
   it('does not send API keys to non-HTTPS OpenAI-compatible endpoints', async () => {
-    setStoredApiKey('test-router-api-key');
+    setRuntimeApiKey('test-router-api-key');
     setAIProviderSettings({
       provider: 'openai-compatible',
       baseUrl: 'http://router.example/v1',
@@ -98,7 +99,7 @@ describe('AIService', () => {
   });
 
   it('uses the configured model and key with a valid HTTPS API router', async () => {
-    setStoredApiKey('test-router-api-key');
+    setRuntimeApiKey('test-router-api-key');
     setAIProviderSettings({
       provider: 'openai-compatible',
       baseUrl: 'https://router.example/v1',

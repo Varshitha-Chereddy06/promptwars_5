@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, Sparkles } from 'lucide-react';
 import { calculateCountdown, formatDate } from '../../services/calculationService';
 
 interface CountdownTimerProps {

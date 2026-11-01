@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Share2, Copy, Check, Download, FileJson, X, Globe, Sparkles } from 'lucide-react';
+import { Share2, Copy, Check, Download, FileJson, X } from 'lucide-react';
 import { FullEventPlan } from '../../types';
 import { generateShareableUrl, exportPlanAsJSON } from '../../services/storageService';
 

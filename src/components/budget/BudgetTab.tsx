@@ -1,22 +1,18 @@
 import React, { useState } from 'react';
-import { Plus, AlertTriangle, ShieldCheck, TrendingDown, Wand2, ArrowUpRight, DollarSign, X } from 'lucide-react';
+import { Plus, AlertTriangle, ShieldCheck, Wand2, X } from 'lucide-react';
 import { BudgetCategory, ExpenseItem } from '../../types';
-import { formatCurrency } from '../../services/calculationService';
+import { formatCurrency, formatDateInputValue } from '../../services/calculationService';
 
 interface BudgetTabProps {
   categories: BudgetCategory[];
-  expenses: ExpenseItem[];
   totalBudget: number;
-  onUpdateCategories: (categories: BudgetCategory[]) => void;
   onAddExpense: (expense: Omit<ExpenseItem, 'id'>) => void;
   onTriggerAIBudgetHacker: () => void;
 }
 
 export const BudgetTab: React.FC<BudgetTabProps> = ({
   categories,
-  expenses,
   totalBudget,
-  onUpdateCategories,
   onAddExpense,
   onTriggerAIBudgetHacker
 }) => {
@@ -24,7 +20,7 @@ export const BudgetTab: React.FC<BudgetTabProps> = ({
   const [selectedCategoryId, setSelectedCategoryId] = useState(categories[0]?.id || '');
   const [expenseName, setExpenseName] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
-  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
+  const [expenseDate, setExpenseDate] = useState(formatDateInputValue());
   const [expensePaidTo, setExpensePaidTo] = useState('');
 
   // Calculations

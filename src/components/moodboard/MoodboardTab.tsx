@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Palette, Copy, Check, Sparkles, Type, Flower2, Wand2 } from 'lucide-react';
-import { MoodboardTheme, PaletteColor } from '../../types';
+import { Copy, Check, Type, Flower2, Wand2 } from 'lucide-react';
+import { MoodboardTheme } from '../../types';
 import { PRESET_THEMES } from '../../constants/presets';
 
 interface MoodboardTabProps {

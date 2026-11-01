@@ -13,7 +13,6 @@ import {
   Store,
   Users,
   Armchair,
-  Palette,
   Wand2,
   Share2,
   Sliders,
@@ -370,7 +369,7 @@ export const HowToUseModal: React.FC<HowToUseModalProps> = ({
               </div>
 
               <div className="divide-y divide-stone-100 dark:divide-stone-800 space-y-4">
-                {steps.map((st, i) => (
+                {steps.map((st) => (
                   <div key={st.id} className="pt-4 first:pt-0 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">

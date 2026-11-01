@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, UserPlus, Check, X, Clock, AlertCircle, Search, Mail, MessageCircle, Filter, Download } from 'lucide-react';
+import { UserPlus, X, AlertCircle, Search, MessageCircle } from 'lucide-react';
 import { Guest, RSVPStatus, DietaryOption } from '../../types';
 
 interface RSVPTabProps {

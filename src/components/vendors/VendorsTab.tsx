@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
-import { Store, Plus, Star, Phone, Mail, FileText, CheckCircle2, AlertCircle, X, ExternalLink, Sparkles, Scale } from 'lucide-react';
-import { Vendor, VendorStatus, VendorQuoteOption } from '../../types';
+import { Plus, Star, Phone, Mail, X, Sparkles, Scale } from 'lucide-react';
+import { Vendor, VendorStatus } from '../../types';
 import { formatCurrency } from '../../services/calculationService';
 
 interface VendorsTabProps {
   vendors: Vendor[];
   onUpdateVendor: (vendor: Vendor) => void;
   onAddVendor: (vendor: Omit<Vendor, 'id'>) => void;
-  onTriggerAIVendorNegotiate?: (category: string) => void;
 }
 
 export const VendorsTab: React.FC<VendorsTabProps> = ({
   vendors,
   onUpdateVendor,
-  onAddVendor,
-  onTriggerAIVendorNegotiate
+  onAddVendor
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [comparingVendor, setComparingVendor] = useState<Vendor | null>(null);
@@ -51,6 +49,7 @@ export const VendorsTab: React.FC<VendorsTabProps> = ({
     });
 
     setName('');
+    setContactName('');
     setEmail('');
     setPhone('');
     setQuotedAmount('');
@@ -365,6 +364,18 @@ export const VendorsTab: React.FC<VendorsTabProps> = ({
                   placeholder="e.g. Silver Fern Floral Studio"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="vendor-contact-name" className="text-xs font-semibold text-stone-700 dark:text-stone-300">Primary Contact</label>
+                <input
+                  id="vendor-contact-name"
+                  type="text"
+                  placeholder="Contact person"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
                   className="w-full px-3 py-2 text-sm bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl"
                 />
               </div>

@@ -1,12 +1,13 @@
-import { FullEventPlan, EventType, BudgetCategory, Milestone, Vendor } from '../types';
+import { FullEventPlan, EventType, Milestone, Vendor } from '../types';
 import { EVENT_TYPE_METADATA, DEFAULT_BUDGET_SPLITS, DEFAULT_TIMELINE_TEMPLATES, DEFAULT_VENDORS_BY_TYPE, PRESET_THEMES, INITIAL_GUESTS, INITIAL_TABLES } from '../constants/presets';
-import { calculateDueDate, calculateAllocations } from './calculationService';
+import { calculateDueDate, formatDateInputValue } from './calculationService';
 
 const STORAGE_KEY_PREFIX = 'soiree_event_plan_';
-const API_KEY_STORAGE_KEY = 'soiree_gemini_api_key';
 const AI_PROVIDER_STORAGE_KEY = 'soiree_ai_provider';
 const AI_BASE_URL_STORAGE_KEY = 'soiree_ai_base_url';
 const AI_MODEL_STORAGE_KEY = 'soiree_ai_model';
+
+let runtimeApiKey = '';
 
 export type AIProvider = 'gemini' | 'openai-compatible';
 
@@ -31,8 +32,12 @@ export function createInitialPlan(type: EventType): FullEventPlan {
   // Default target date is 6 months from today for wedding, 2 months for birthday, 3 months for community
   const targetDate = new Date();
   const monthsAhead = type === 'wedding' ? 6 : type === 'birthday' ? 2 : 3;
+  const targetDay = targetDate.getDate();
+  targetDate.setDate(1);
   targetDate.setMonth(targetDate.getMonth() + monthsAhead);
-  const dateStr = targetDate.toISOString().split('T')[0];
+  const lastDayOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
+  targetDate.setDate(Math.min(targetDay, lastDayOfMonth));
+  const dateStr = formatDateInputValue(targetDate);
 
   const defaultCity = type === 'wedding' ? 'Charleston, SC' : type === 'birthday' ? 'Austin, TX' : 'Seattle, WA';
   const defaultTitle = type === 'wedding' ? 'Evelyn & Julian’s Wedding Celebration' :
@@ -114,7 +119,7 @@ export function createInitialPlan(type: EventType): FullEventPlan {
         categoryId: rawCategories[0].id,
         name: `${rawCategories[0].name} - Deposit`,
         amount: rawCategories[0].spentAmount,
-        date: new Date().toISOString().split('T')[0],
+        date: formatDateInputValue(),
         paidTo: vendors[0]?.name || 'Primary Venue'
       }
     ],
@@ -142,10 +147,11 @@ export function loadPlan(type: EventType): FullEventPlan {
   try {
     const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${type}`);
     if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && parsed.details && parsed.details.type === type) {
+      const parsed: unknown = JSON.parse(raw);
+      if (isStoredPlan(parsed) && parsed.details.type === type) {
         return parsed;
       }
+      console.warn(`Saved plan for ${type} has an invalid shape; using a fresh plan.`);
     }
   } catch (err) {
     console.warn(`Failed to parse saved plan for ${type}`, err);
@@ -188,6 +194,138 @@ export function generateShareableUrl(plan: FullEventPlan): string {
   return url.toString();
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isSharedEventDetails(value: unknown): value is FullEventPlan['details'] {
+  return isRecord(value) &&
+    (value.type === 'wedding' || value.type === 'birthday' || value.type === 'community') &&
+    ['id', 'title', 'hostNames', 'date', 'time', 'city', 'venueName', 'vibe', 'currency', 'notes', 'createdAt', 'updatedAt']
+      .every(key => isString(value[key])) &&
+    isFiniteNumber(value.totalBudget) &&
+    isFiniteNumber(value.guestCount);
+}
+
+function isSharedCategory(value: unknown): value is FullEventPlan['categories'][number] {
+  return isRecord(value) &&
+    ['id', 'name', 'iconName', 'color', 'notes'].every(key => isString(value[key])) &&
+    ['percentage', 'allocatedAmount', 'spentAmount'].every(key => isFiniteNumber(value[key]));
+}
+
+function isSharedExpense(value: unknown): value is FullEventPlan['expenses'][number] {
+  return isRecord(value) &&
+    ['id', 'categoryId', 'name', 'date', 'paidTo'].every(key => isString(value[key])) &&
+    isFiniteNumber(value.amount) &&
+    (value.receiptUrl === undefined || isString(value.receiptUrl));
+}
+
+function isSharedMilestone(value: unknown): value is FullEventPlan['milestones'][number] {
+  return isRecord(value) &&
+    ['id', 'title', 'calculatedDueDate', 'category', 'assignee'].every(key => isString(value[key])) &&
+    isFiniteNumber(value.daysBeforeEvent) &&
+    (value.status === 'pending' || value.status === 'in_progress' || value.status === 'completed') &&
+    (value.isOverdue === undefined || typeof value.isOverdue === 'boolean') &&
+    (value.notes === undefined || isString(value.notes));
+}
+
+function isSharedVendor(value: unknown): value is FullEventPlan['vendors'][number] {
+  return isRecord(value) &&
+    ['id', 'category', 'name', 'contactName', 'email', 'phone', 'notes'].every(key => isString(value[key])) &&
+    (value.status === 'researching' || value.status === 'contacted' || value.status === 'quote_received' || value.status === 'hired' || value.status === 'declined') &&
+    ['quotedAmount', 'depositPaid', 'rating'].every(key => isFiniteNumber(value[key])) &&
+    (value.quoteOptions === undefined || isArrayOf(value.quoteOptions, isSharedQuoteOption));
+}
+
+function isSharedQuoteOption(value: unknown): value is NonNullable<FullEventPlan['vendors'][number]['quoteOptions']>[number] {
+  return isRecord(value) &&
+    ['id', 'vendorName', 'packageDetails', 'pros', 'cons'].every(key => isString(value[key])) &&
+    isFiniteNumber(value.quotedPrice) &&
+    (value.isRecommended === undefined || typeof value.isRecommended === 'boolean');
+}
+
+function isArrayOf<T>(value: unknown, isItem: (item: unknown) => item is T): value is T[] {
+  return Array.isArray(value) && value.every(isItem);
+}
+
+function isSharedGuest(value: unknown): value is FullEventPlan['guests'][number] {
+  return isRecord(value) &&
+    ['id', 'name', 'email', 'group'].every(key => isString(value[key])) &&
+    (value.rsvpStatus === 'confirmed' || value.rsvpStatus === 'declined' || value.rsvpStatus === 'pending') &&
+    isFiniteNumber(value.plusOnes) &&
+    ['none', 'vegan', 'vegetarian', 'gluten_free', 'dairy_free', 'halal', 'kosher', 'nut_allergy'].includes(String(value.dietary)) &&
+    ['phone', 'dietaryDetails', 'mealChoice', 'tableId', 'notes'].every(key => value[key] === undefined || isString(value[key])) &&
+    (value.seatNumber === undefined || isFiniteNumber(value.seatNumber));
+}
+
+function isSharedTable(value: unknown): value is FullEventPlan['tables'][number] {
+  return isRecord(value) &&
+    isString(value.id) &&
+    isString(value.name) &&
+    (value.shape === 'round' || value.shape === 'rectangular' || value.shape === 'head') &&
+    ['capacity', 'x', 'y'].every(key => isFiniteNumber(value[key])) &&
+    isArrayOf(value.guestIds, isString);
+}
+
+function isSharedTheme(value: unknown): value is NonNullable<FullEventPlan['activeTheme']> {
+  return isRecord(value) &&
+    isString(value.id) &&
+    isString(value.name) &&
+    isString(value.description) &&
+    isRecord(value.fontPairing) &&
+    isString(value.fontPairing.heading) &&
+    isString(value.fontPairing.body) &&
+    isArrayOf(value.palette, isSharedPaletteColor) &&
+    isArrayOf(value.decorElements, isString) &&
+    isArrayOf(value.stylingKeywords, isString);
+}
+
+function isSharedPaletteColor(value: unknown): value is NonNullable<FullEventPlan['activeTheme']>['palette'][number] {
+  return isRecord(value) &&
+    isString(value.hex) &&
+    isString(value.name) &&
+    (value.role === 'primary' || value.role === 'secondary' || value.role === 'accent' || value.role === 'neutral' || value.role === 'highlight');
+}
+
+function isSharedAIResult(value: unknown): value is FullEventPlan['aiSavedOutputs'][string] {
+  return isRecord(value) &&
+    isString(value.toolId) &&
+    isString(value.title) &&
+    isString(value.content) &&
+    isString(value.generatedAt);
+}
+
+function isSharedChatMessage(value: unknown): value is FullEventPlan['chatHistory'][number] {
+  return isRecord(value) &&
+    isString(value.id) &&
+    (value.sender === 'user' || value.sender === 'assistant' || value.sender === 'system') &&
+    isString(value.content) &&
+    isString(value.timestamp);
+}
+
+function isStoredPlan(value: unknown): value is FullEventPlan {
+  return isRecord(value) &&
+    isSharedEventDetails(value.details) &&
+    isArrayOf(value.categories, isSharedCategory) &&
+    isArrayOf(value.expenses, isSharedExpense) &&
+    isArrayOf(value.milestones, isSharedMilestone) &&
+    isArrayOf(value.vendors, isSharedVendor) &&
+    isArrayOf(value.guests, isSharedGuest) &&
+    isArrayOf(value.tables, isSharedTable) &&
+    (value.activeTheme === undefined || isSharedTheme(value.activeTheme)) &&
+    isRecord(value.aiSavedOutputs) &&
+    Object.values(value.aiSavedOutputs).every(isSharedAIResult) &&
+    isArrayOf(value.chatHistory, isSharedChatMessage);
+}
+
 /**
  * Checks and decodes shared plan from URL hash if available
  */
@@ -195,21 +333,29 @@ export function decodeSharedPlanFromUrl(): FullEventPlan | null {
   try {
     const hash = window.location.hash;
     if (hash.startsWith('#plan=')) {
-      const b64 = hash.replace('#plan=', '');
+      const b64 = hash.slice('#plan='.length);
+      if (b64.length > 256_000) {
+        throw new Error('Shared plan exceeds the maximum supported size.');
+      }
       const jsonStr = decodeURIComponent(atob(b64));
-      const minified = JSON.parse(jsonStr);
-      const eventType = minified?.d?.type;
-      if (
-        minified &&
-        minified.d &&
-        (eventType === 'wedding' || eventType === 'birthday' || eventType === 'community')
-      ) {
+      const minified: unknown = JSON.parse(jsonStr);
+      if (isRecord(minified) && isSharedEventDetails(minified.d)) {
+        const sharedSections = [
+          ['c', isArrayOf(minified.c, isSharedCategory)],
+          ['e', isArrayOf(minified.e, isSharedExpense)],
+          ['m', isArrayOf(minified.m, isSharedMilestone)],
+          ['v', isArrayOf(minified.v, isSharedVendor)]
+        ] as const;
+        if (sharedSections.some(([key, isValid]) => minified[key] !== undefined && !isValid)) {
+          throw new Error('Shared plan contains invalid event data.');
+        }
+
         const full = createInitialPlan(minified.d.type);
         full.details = { ...full.details, ...minified.d };
-        if (Array.isArray(minified.c)) full.categories = minified.c;
-        if (Array.isArray(minified.e)) full.expenses = minified.e;
-        if (Array.isArray(minified.m)) full.milestones = minified.m;
-        if (Array.isArray(minified.v)) full.vendors = minified.v;
+        if (isArrayOf(minified.c, isSharedCategory)) full.categories = minified.c;
+        if (isArrayOf(minified.e, isSharedExpense)) full.expenses = minified.e;
+        if (isArrayOf(minified.m, isSharedMilestone)) full.milestones = minified.m;
+        if (isArrayOf(minified.v, isSharedVendor)) full.vendors = minified.v;
         if (typeof minified.t === 'string') {
           const sharedTheme = PRESET_THEMES.find(theme => theme.id === minified.t);
           if (sharedTheme) full.activeTheme = sharedTheme;
@@ -238,26 +384,14 @@ export function exportPlanAsJSON(plan: FullEventPlan): void {
 }
 
 /**
- * Stored API Key management
+ * Keeps API keys in memory only; callers must re-enter them after a reload.
  */
-export function getStoredApiKey(): string {
-  try {
-    return localStorage.getItem(API_KEY_STORAGE_KEY) || '';
-  } catch {
-    return '';
-  }
+export function getRuntimeApiKey(): string {
+  return runtimeApiKey;
 }
 
-export function setStoredApiKey(key: string): void {
-  try {
-    if (!key) {
-      localStorage.removeItem(API_KEY_STORAGE_KEY);
-    } else {
-      localStorage.setItem(API_KEY_STORAGE_KEY, key.trim());
-    }
-  } catch (e) {
-    console.error('Failed to persist API key', e);
-  }
+export function setRuntimeApiKey(key: string): void {
+  runtimeApiKey = key.trim();
 }
 
 export function getAIProviderSettings(): AIProviderSettings {

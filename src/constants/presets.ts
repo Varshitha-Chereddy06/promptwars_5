@@ -1,4 +1,4 @@
-import { EventType, BudgetCategory, Milestone, Vendor, Guest, Table, MoodboardTheme } from '../types';
+import { EventType, BudgetCategory, Guest, Table, MoodboardTheme } from '../types';
 
 export const EVENT_TYPE_METADATA: Record<EventType, {
   name: string;

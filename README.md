@@ -163,22 +163,23 @@ Switching between **Wedding**, **Birthday**, and **Community Event** adapts the 
 
 ### 1. Code Quality & Architecture
 - **Strict TypeScript:** Domain entities such as `EventDetails`, `BudgetCategory`, `Milestone`, `Vendor`, `Guest`, `Table`, and `MoodboardTheme` have explicit types.
+- **Unused-code checks:** TypeScript rejects unused local variables and parameters to catch dead or stale code during builds.
 - **Separated concerns:** Types, calculations, persistence, AI execution, and UI components are organized into focused modules.
 - **Modular UI:** Event planning features are split into React components by responsibility.
 
 ### 2. Security & Privacy
 - **Client-Side Privacy:** All plan data is saved in the user's browser `localStorage`.
-- **Browser-Stored API Key:** The key is kept in browser `localStorage` and sent directly to the selected AI provider for live generation. Do not use this client-side setup in a public deployment; use a server-side proxy and secret storage there.
-- **Sanitized Outputs:** All inputs and text areas are strongly typed with React escaping to prevent Cross-Site Scripting (XSS).
+- **Runtime-Only API Key:** The key is held in memory for the current tab and sent directly to the selected AI provider for live generation. It is not persisted and is cleared on reload. For a public deployment, use a server-side proxy and server-side secret storage.
+- **Safe rendering and imports:** User-entered text is rendered through React rather than raw HTML, and persisted/shared plan data is shape-validated before use.
 - **Client-side sharing:** Share links encode event details, budget categories and expenses, milestones, vendors, and the selected theme in the URL hash. They do not include guest lists or AI chat history. Links are not compressed or encrypted; anyone with a link can view its encoded plan data, so avoid sharing sensitive information.
 
 ### 3. Efficiency & Performance
 - **Vite 6 Bundler:** Instant hot-module replacement and optimized tree-shaking.
-- **Lightweight Production Build:** The current production output is approximately **434 kB** before gzip (**117 kB** gzipped across JavaScript and CSS).
+- **Lightweight Production Build:** The current production output is approximately **439 kB** before gzip (**118 kB** gzipped across JavaScript and CSS).
 - **Client-side calculations:** Budget allocations, countdowns, guest sensitivity, and plan health are calculated in the browser without additional server requests.
 
 ### 4. Testing & Validation
-- **Vitest & React Testing Library:** 30 automated tests cover calculations, reverse-scheduled dates, health scores, guest sensitivity, persistence and sharing, AI provider requests and fallback, and UI behavior.
+- **Vitest & React Testing Library:** 37 automated tests cover calculations, timezone-safe date handling, health scores, guest sensitivity, storage and share-input validation, AI provider requests and fallback, and UI behavior.
 - **Automated validation:** Run `npm test` and `npm run build` to validate the current code.
 
 ### 5. Accessibility
@@ -224,7 +225,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 ### Configure Live AI (Optional)
 Open **Live AI / Local AI** in the top navigation, choose **OpenAI-compatible API router**, then enter the router's API key and a model name enabled by that provider. The API base URL defaults to `https://router.bynara.id/v1`; the app calls its `/chat/completions` endpoint. The URL must use HTTPS and must not contain credentials or query parameters. Live requests send the prompt and relevant event-plan context to that provider. Without a key, AI Studio and Co-Pilot use the built-in offline response engine.
 
-The key is stored in this browser's `localStorage`, which is suitable only for personal local use. For a public deployment, route requests through a backend and keep the provider key server-side. The router must allow browser CORS requests for local development.
+The key is held in memory only for the current tab and is cleared when the page reloads. Because this is a client-side app, a key used for live requests is visible to the browser and selected provider; use a backend proxy with server-side secret storage for public deployments. The router must allow browser CORS requests for local development.
 
 ### Build Production Bundle
 ```bash
@@ -241,8 +242,8 @@ npm run test
 ```
 
 ### Test Coverage Highlights:
-- `src/test/calculationService.test.ts` — Tests countdown, reverse milestone date math, health score formulas, and +20 guest sensitivity.
-- `src/test/storageService.test.ts` — Tests plan initialization, localStorage synchronization, URL hash encoding/decoding, API key storage, and AI provider settings.
+- `src/test/calculationService.test.ts` — Tests countdown, timezone-safe reverse milestone date math, health score formulas, and +20 guest sensitivity.
+- `src/test/storageService.test.ts` — Tests plan initialization, persisted-plan validation, URL hash encoding/decoding and size limits, runtime-only API key handling, and AI provider settings.
 - `src/test/aiService.test.ts` — Tests offline AI generation for all 8 tools and conversational co-pilot context injection.
 - `src/test/components.test.tsx` — Validates Navbar, CountdownTimer, HealthScoreGauge, and GuestSensitivityCard rendering.
 

@@ -6,7 +6,8 @@ import {
   calculateAllocations,
   calculatePlanHealth,
   calculateGuestSensitivity,
-  formatCurrency
+  formatCurrency,
+  formatDateInputValue
 } from '../services/calculationService';
 import { BudgetCategory, Milestone, Vendor, Guest } from '../types';
 
@@ -23,6 +24,13 @@ describe('CalculationService', () => {
     it('returns empty string for invalid date inputs', () => {
       expect(calculateDueDate('', 30)).toBe('');
       expect(calculateDueDate('invalid-date', 30)).toBe('');
+      expect(calculateDueDate('2026-02-30', 30)).toBe('');
+      expect(calculateDueDate('2026-12-31', Number.NaN)).toBe('');
+      expect(calculateDueDate('2026-12-31', 1.5)).toBe('');
+    });
+
+    it('calculates leap-day deadlines without timezone-dependent date shifts', () => {
+      expect(calculateDueDate('2024-03-01', 1)).toBe('2024-02-29');
     });
   });
 
@@ -57,6 +65,11 @@ describe('CalculationService', () => {
       const countdown = calculateCountdown(pastDate, '12:00');
       expect(countdown.isPast).toBe(true);
       expect(countdown.totalSeconds).toBe(0);
+    });
+
+    it('returns a safe empty countdown for invalid dates and times', () => {
+      expect(calculateCountdown('2026-02-30', '12:00').totalSeconds).toBe(0);
+      expect(calculateCountdown('2099-01-01', '25:00').totalSeconds).toBe(0);
     });
   });
 
@@ -113,6 +126,12 @@ describe('CalculationService', () => {
   describe('formatCurrency', () => {
     it('formats numbers into clean currency strings', () => {
       expect(formatCurrency(5000)).toContain('5,000');
+    });
+
+    describe('formatDateInputValue', () => {
+      it('formats the local calendar date without converting through UTC', () => {
+        expect(formatDateInputValue(new Date(2026, 0, 2, 23, 30))).toBe('2026-01-02');
+      });
     });
   });
 });

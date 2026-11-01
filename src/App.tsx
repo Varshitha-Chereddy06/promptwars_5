@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { EventType, FullEventPlan, MilestoneStatus, ExpenseItem, Vendor, Guest, Table, MoodboardTheme, AIToolResult } from './types';
-import { loadPlan, savePlan, getStoredApiKey, decodeSharedPlanFromUrl, createInitialPlan } from './services/storageService';
+import { loadPlan, savePlan, getRuntimeApiKey, decodeSharedPlanFromUrl, createInitialPlan } from './services/storageService';
 import { calculatePlanHealth, calculateGuestSensitivity, calculateAllocations } from './services/calculationService';
 import { Navbar } from './components/layout/Navbar';
 import { TabNavigation, ActiveTabId } from './components/layout/TabNavigation';
@@ -36,7 +36,7 @@ export const App: React.FC = () => {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isHowToUseModalOpen, setIsHowToUseModalOpen] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState(() => Boolean(getStoredApiKey()));
+  const [hasApiKey, setHasApiKey] = useState(() => Boolean(getRuntimeApiKey()));
 
   // Auto-save whenever plan changes
   useEffect(() => {
@@ -45,7 +45,7 @@ export const App: React.FC = () => {
 
   // Refresh API key status
   const handleKeyUpdated = () => {
-    setHasApiKey(Boolean(getStoredApiKey()));
+    setHasApiKey(Boolean(getRuntimeApiKey()));
   };
 
   // Switch Event Type
@@ -238,16 +238,13 @@ export const App: React.FC = () => {
             healthMetrics={healthMetrics}
             sensitivity={sensitivity}
             onUpdateDetails={handleUpdateDetails}
-            onNavigateToTab={(tab) => setActiveTab(tab)}
           />
         )}
 
         {activeTab === 'budget' && (
           <BudgetTab
             categories={plan.categories}
-            expenses={plan.expenses}
             totalBudget={plan.details.totalBudget}
-            onUpdateCategories={(cats) => setPlan(prev => ({ ...prev, categories: cats }))}
             onAddExpense={handleAddExpense}
             onTriggerAIBudgetHacker={() => {
               setSelectedAIToolId('budget_hacker');
@@ -294,7 +291,6 @@ export const App: React.FC = () => {
             tables={plan.tables}
             guests={plan.guests}
             onUpdateTables={handleUpdateTables}
-            onUpdateGuest={handleUpdateGuest}
           />
         )}
 
@@ -354,7 +350,7 @@ export const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
-            <span>100% Client-Side Privacy</span>
+            <span>Plans stay in this browser unless shared or sent to live AI</span>
             <span>•</span>
             <button
               onClick={() => {

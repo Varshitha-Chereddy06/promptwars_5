@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Edit3, Check, DollarSign, MapPin, Sparkles, User } from 'lucide-react';
 import { FullEventPlan, PlanHealthMetrics, SensitivityAnalysis } from '../../types';
-import { ActiveTabId } from '../layout/TabNavigation';
 import { EVENT_TYPE_METADATA } from '../../constants/presets';
 import { CountdownTimer } from './CountdownTimer';
 import { HealthScoreGauge } from './HealthScoreGauge';
@@ -13,15 +12,13 @@ interface OverviewTabProps {
   healthMetrics: PlanHealthMetrics;
   sensitivity: SensitivityAnalysis;
   onUpdateDetails: (updated: Partial<FullEventPlan['details']>) => void;
-  onNavigateToTab: (tab: ActiveTabId) => void;
 }
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({
   plan,
   healthMetrics,
   sensitivity,
-  onUpdateDetails,
-  onNavigateToTab
+  onUpdateDetails
 }) => {
   const { details } = plan;
   const meta = EVENT_TYPE_METADATA[details.type];
@@ -231,7 +228,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         <HealthScoreGauge
           metrics={healthMetrics}
-          onNavigateToTab={onNavigateToTab}
         />
         <GuestSensitivityCard
           guestCount={details.guestCount}

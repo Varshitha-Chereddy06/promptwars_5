@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, X, Sparkles, User, RefreshCw, Lightbulb, MessageSquare } from 'lucide-react';
+import { Bot, Send, X, Sparkles, User, RefreshCw } from 'lucide-react';
 import { FullEventPlan, ChatMessage } from '../../types';
 import { executeAITool } from '../../services/aiService';
 

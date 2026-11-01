@@ -1,5 +1,5 @@
-import { FullEventPlan, AIToolResult, PaletteColor } from '../types';
-import { getAIProviderSettings, getStoredApiKey } from './storageService';
+import { FullEventPlan, AIToolResult } from '../types';
+import { getAIProviderSettings, getRuntimeApiKey } from './storageService';
 import { formatCurrency } from './calculationService';
 
 export interface GenerateAIRequest {
@@ -13,7 +13,7 @@ export interface GenerateAIRequest {
  * Executes a tool or chat query via Gemini API or falls back to intelligent local synthesis
  */
 export async function executeAITool(req: GenerateAIRequest): Promise<AIToolResult> {
-  const apiKey = getStoredApiKey();
+  const apiKey = getRuntimeApiKey();
   const aiSettings = getAIProviderSettings();
   const { toolId, plan, customPrompt, additionalParams } = req;
 
@@ -168,7 +168,7 @@ function buildSystemPromptForTool(
   customPrompt?: string,
   params?: Record<string, string>
 ): string {
-  const { details, categories, milestones, vendors } = plan;
+  const { details, categories, milestones } = plan;
   const context = `
 You are Soirée's Lead AI Event Planner.
 Event Details:
@@ -229,7 +229,6 @@ function generateLocalAIEngineResponse(
   const city = details.city || 'your city';
   const vibe = details.vibe || 'celebratory';
   const guests = details.guestCount;
-  const budget = details.totalBudget;
   const title = details.title;
   const hosts = details.hostNames;
 

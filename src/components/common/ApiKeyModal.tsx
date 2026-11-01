@@ -3,9 +3,9 @@ import { Key, ShieldCheck, ExternalLink, X, CheckCircle2, Sparkles } from 'lucid
 import {
   AIProvider,
   getAIProviderSettings,
-  getStoredApiKey,
+  getRuntimeApiKey,
   setAIProviderSettings,
-  setStoredApiKey
+  setRuntimeApiKey
 } from '../../services/storageService';
 
 interface ApiKeyModalProps {
@@ -23,7 +23,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
 
   useEffect(() => {
     if (isOpen) {
-      setApiKey(getStoredApiKey());
+      setApiKey(getRuntimeApiKey());
       const settings = getAIProviderSettings();
       setProvider(settings.provider);
       setBaseUrl(settings.baseUrl);
@@ -35,7 +35,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
   if (!isOpen) return null;
 
   const handleSave = () => {
-    setStoredApiKey(apiKey);
+    setRuntimeApiKey(apiKey);
     setAIProviderSettings({ provider, baseUrl, model });
     setSavedSuccess(true);
     onKeyUpdated();
@@ -46,7 +46,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
 
   const handleClear = () => {
     setApiKey('');
-    setStoredApiKey('');
+    setRuntimeApiKey('');
     setSavedSuccess(true);
     onKeyUpdated();
   };
@@ -150,7 +150,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onKey
               />
             </div>
             <p className="text-[11px] text-stone-500 flex items-center justify-between mt-1">
-              <span>Stored in this browser only. Do not use a browser-stored key on a public deployment.</span>
+              <span>Kept in tab memory only; live requests send it with your event context to the selected provider. Use a server-side proxy for public deployments.</span>
               {provider === 'gemini' && (
                 <a
                   href="https://aistudio.google.com/app/apikey"

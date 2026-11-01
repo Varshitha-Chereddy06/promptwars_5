@@ -11,9 +11,7 @@ import {
   Megaphone,
   Copy,
   Check,
-  RefreshCw,
-  ExternalLink,
-  Bot
+  RefreshCw
 } from 'lucide-react';
 import { FullEventPlan, AIToolResult } from '../../types';
 import { executeAITool } from '../../services/aiService';

@@ -1,19 +1,40 @@
 import { BudgetCategory, Milestone, Vendor, Guest, PlanHealthMetrics, SensitivityAnalysis, EventType } from '../types';
 
+function getCalendarDateParts(dateStr: string): [number, number, number] | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (!match) return null;
+
+  const [year, month, day] = match.slice(1).map(Number);
+  const validationDate = new Date(0);
+  validationDate.setUTCFullYear(year, month - 1, day);
+  validationDate.setUTCHours(0, 0, 0, 0);
+
+  if (
+    validationDate.getUTCFullYear() !== year ||
+    validationDate.getUTCMonth() !== month - 1 ||
+    validationDate.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return [year, month, day];
+}
+
 /**
  * Calculates calendar due date given an event date string and days before the event
  */
 export function calculateDueDate(eventDateStr: string, daysBeforeEvent: number): string {
-  if (!eventDateStr) return '';
-  const eventDate = new Date(eventDateStr);
-  if (isNaN(eventDate.getTime())) return '';
+  const dateParts = getCalendarDateParts(eventDateStr);
+  if (!dateParts || !Number.isInteger(daysBeforeEvent)) return '';
 
-  const dueDate = new Date(eventDate);
-  dueDate.setDate(dueDate.getDate() - daysBeforeEvent);
+  const dueDate = new Date(0);
+  dueDate.setUTCFullYear(dateParts[0], dateParts[1] - 1, dateParts[2]);
+  dueDate.setUTCHours(0, 0, 0, 0);
+  dueDate.setUTCDate(dueDate.getUTCDate() - daysBeforeEvent);
 
-  const year = dueDate.getFullYear();
-  const month = String(dueDate.getMonth() + 1).padStart(2, '0');
-  const day = String(dueDate.getDate()).padStart(2, '0');
+  const year = dueDate.getUTCFullYear();
+  const month = String(dueDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(dueDate.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -21,15 +42,18 @@ export function calculateDueDate(eventDateStr: string, daysBeforeEvent: number):
  * Checks if a milestone is overdue (due date before today and not completed)
  */
 export function isMilestoneOverdue(dueDateStr: string, status: string): boolean {
-  if (status === 'completed' || !dueDateStr) return false;
-  const dueDate = new Date(dueDateStr);
-  if (isNaN(dueDate.getTime())) return false;
+  const dueDateParts = getCalendarDateParts(dueDateStr);
+  if (status === 'completed' || !dueDateParts) return false;
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  dueDate.setHours(0, 0, 0, 0);
+  const todayDate = new Date(0);
+  todayDate.setUTCFullYear(today.getFullYear(), today.getMonth(), today.getDate());
+  todayDate.setUTCHours(0, 0, 0, 0);
+  const dueDate = new Date(0);
+  dueDate.setUTCFullYear(dueDateParts[0], dueDateParts[1] - 1, dueDateParts[2]);
+  dueDate.setUTCHours(0, 0, 0, 0);
 
-  return dueDate.getTime() < today.getTime();
+  return dueDate.getTime() < todayDate.getTime();
 }
 
 /**
@@ -43,13 +67,25 @@ export function calculateCountdown(eventDateStr: string, eventTimeStr: string = 
   seconds: number;
   isPast: boolean;
 } {
-  if (!eventDateStr) {
+  const dateParts = getCalendarDateParts(eventDateStr);
+  const timeMatch = /^(\d{2}):(\d{2})$/.exec(eventTimeStr);
+  const hour = timeMatch ? Number(timeMatch[1]) : NaN;
+  const minute = timeMatch ? Number(timeMatch[2]) : NaN;
+  if (!dateParts || hour < 0 || hour > 23 || minute < 0 || minute > 59 || !Number.isInteger(hour) || !Number.isInteger(minute)) {
     return { totalSeconds: 0, days: 0, hours: 0, minutes: 0, seconds: 0, isPast: false };
   }
 
-  const [hours, minutes] = eventTimeStr.split(':').map(Number);
-  const targetDate = new Date(eventDateStr);
-  targetDate.setHours(isNaN(hours) ? 17 : hours, isNaN(minutes) ? 0 : minutes, 0, 0);
+  const [year, month, day] = dateParts;
+  const targetDate = new Date(year, month - 1, day, hour, minute, 0, 0);
+  if (
+    targetDate.getFullYear() !== year ||
+    targetDate.getMonth() !== month - 1 ||
+    targetDate.getDate() !== day ||
+    targetDate.getHours() !== hour ||
+    targetDate.getMinutes() !== minute
+  ) {
+    return { totalSeconds: 0, days: 0, hours: 0, minutes: 0, seconds: 0, isPast: false };
+  }
 
   const now = new Date();
   const diffMs = targetDate.getTime() - now.getTime();
@@ -278,4 +314,11 @@ export function formatDate(dateStr: string): string {
     day: 'numeric',
     year: 'numeric'
   });
+}
+
+export function formatDateInputValue(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
